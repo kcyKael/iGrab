@@ -11,7 +11,7 @@
       margin: 0;
       padding: 0;
       font-family: Arial, sans-serif;
-      background: url('album/cover.jpg') no-repeat center center/cover;
+      background: url('album/FEU Main.png') no-repeat center center/cover;
       height: 100vh;
       display: flex;
       justify-content: center;
@@ -30,13 +30,18 @@
     }
 
     .login-container .logo {
-      width: 100px;
-      margin-bottom: 20px;
+      max-width:200px;
+      height: auto;
+      margin-bottom: 0px;
     }
 
     .login-container h1 {
       font-size: 2rem;
       margin-bottom: 10px;
+    }
+
+    .highlight {
+      color: #fcbd15;
     }
 
     .login-container p {
@@ -66,8 +71,9 @@
 
     .login-form button {
       padding: 0.75rem;
-      background-color: #007bff;
-      color: white;
+      background-color: #145b21;
+      color: #fcbd15;
+      font-weight: bold;
       border: none;
       border-radius: 6px;
       font-size: 1rem;
@@ -76,7 +82,7 @@
     }
 
     .login-form button:hover {
-      background-color: #0056b3;
+      background-color: #0a3612;
     }
 
     .forgot {
@@ -104,13 +110,8 @@
 <body>
     
   <div class="login-container">
-<<<<<<< HEAD
     <img src="album/logo_igrab.png" alt="Logo" class="logo" >
     <h1>Welcome to i<span class="highlight">Grab</span></h1>
-=======
-    <img src="album/logo_igrab.png" alt="Logo" class="logo" />
-    <h1>Welcome to iGrab</h1>
->>>>>>> parent of e2d2b04 (Merge Jerahmeel Contribution from kcyKael/Jerahmeel-Progress to master branch)
     <p>Login to your account</p>
 
     <form class="login-form" action="home.html" method="POST">
