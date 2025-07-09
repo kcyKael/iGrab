@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel | iGrab</title>
+  <link rel="icon" href="album/logo_igrab.png" type="image/png" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .admin-panel {
+      margin-top: 2rem;
+    }
+
+    .admin-panel h2 {
+      color: #0a3612;
+      font-size: 1.8rem;
+      margin-bottom: 1rem;
+    }
+
+    .admin-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .admin-input {
+      padding: 0.75rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 1rem;
+      flex: 1;
+      min-width: 180px;
+    }
+
+    .btn {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn.green {
+      background-color: #145b21;
+      color: #fcbd15;
+    }
+
+    .btn.green:hover {
+      background-color: #0a3612;
+    }
+
+    .btn.red {
+      background-color: #dc3545;
+      color: white;
+    }
+
+    .btn.red:hover {
+      background-color: #c82333;
+    }
+
+    .pending-requests h3 {
+      color: #333;
+      margin-bottom: 1rem;
+    }
+
+    .request-table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: #fff;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .request-table th, .request-table td {
+      padding: 12px 16px;
+      text-align: left;
+    }
+
+    .request-table th {
+      background-color: #c2c7cd;
+    }
+
+    .request-table tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <img src="album/logo_igrab.png" alt="Logo" class="logo">
+
+    <nav class="nav-left">
+      <a href="index.html">Home</a>
+      <a href="dashboard.html">My Dashboard</a>
+      <a href="admin.html" class="active">Admin Panel</a>
+    </nav>
+
+    <nav class="nav-right">
+      <p>Admin</p>
+      <img src="album/profile.jpg" alt="Profile" class="profile-icon">
+      <a href="logout.html">Logout</a>
+    </nav>
+  </header>
+
+  <div class="container">
+    <!-- ADMIN PANEL SECTION -->
+    <section class="admin-panel">
+      <h2>Admin Panel</h2>
+      <div class="admin-controls">
+        <input type="text" placeholder="Equipment Name" class="admin-input">
+        <input type="number" placeholder="Quantity" class="admin-input" min="1">
+        <input type="text" placeholder="Category (e.g., Projector)" class="admin-input">
+        <button class="btn green">Add Equipment</button>
+        <button class="btn red">Reset Inventory</button>
+      </div>
+
+      <div class="pending-requests">
+        <h3>Pending Borrow Requests</h3>
+        <table class="request-table">
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Item</th>
+              <th>Quantity</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Emran</td>
+              <td>Projector</td>
+              <td>1</td>
+              <td>6/20/2025, 11:01:20</td>
+            </tr>
+            <tr>
+              <td>Kyl</td>
+              <td>Laptop</td>
+              <td>1</td>
+              <td>6/20/2025, 11:01:20</td>
+            </tr>
+            <tr>
+              <td>Jerahmeel</td>
+              <td>Monitor</td>
+              <td>2</td>
+              <td>6/20/2025, 11:01:20</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    <p>&copy; 2025 iGrab. All rights reserved.</p>
+    <p>Developed by: Maina E., Maliñana E., Romero J., Valencia, K.</p>
+    <p>Contact: <a href="mailto:valnc.kyl@gmail.com">valnc.kyl@gmail.com</a></p>
+  </footer>
+
+</body>
+</html>
