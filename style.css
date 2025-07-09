@@ -13,7 +13,7 @@ body {
 }
 
 header {
-    background-color: #ffffff;
+    background-color: #0a3612;
     padding: 1rem 2rem;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     display: flex;
@@ -22,12 +22,12 @@ header {
 }
 
 .logo {
-    height: 40px;
-    width: auto;
+    max-width:200px;
+    height: auto;
 }
 
 header h1 {
-    color: #333;
+    color: #ffffff;
     margin-left: 1rem;
     font-size: 1.5rem;
 }
@@ -40,16 +40,16 @@ header h1 {
 
 .nav-left a {
     text-decoration: none;
-    color: #333;
-    font-weight: 500;
+    color: #ffffff;
+    font-weight: bold;
     transition: color 0.3s ease;
     padding: 0.5rem 1rem;
     border-radius: 4px;
 }
 
 .nav-left a:hover, .nav-left a.active {
-    color: #007bff;
-    background-color: #f8f9fa;
+    color: #0a3612;
+    background-color: #fcbd15;
 }
 
 .nav-right {
@@ -60,7 +60,7 @@ header h1 {
 }
 
 .nav-right p {
-    color: #666;
+    color: #ffffff;
     font-size: 0.9rem;
 }
 
@@ -74,7 +74,7 @@ header h1 {
 .nav-right a {
     text-decoration: none;
     color: #dc3545;
-    font-weight: 500;
+    font-weight: bold;
     padding: 0.5rem 1rem;
     border: 1px solid #dc3545;
     border-radius: 4px;
@@ -100,7 +100,7 @@ header h1 {
 }
 
 .tracker-section h2 {
-    color: #333;
+    color: #0a3612;
     margin-bottom: 1.5rem;
     font-size: 1.8rem;
 }
@@ -201,7 +201,7 @@ header h1 {
 }
 
 footer {
-    background-color: #333;
+    background-color: #0a3612;
     color: #fff;
     padding: 2rem;
     text-align: center;
@@ -214,13 +214,13 @@ footer p {
 }
 
 footer a {
-    color: #007bff;
+    color: #b59410;
     text-decoration: none;
     transition: color 0.3s ease;
 }
 
 footer a:hover {
-    color: #0056b3;
+    color: #fcbd15;
     text-decoration: underline;
 }
 
