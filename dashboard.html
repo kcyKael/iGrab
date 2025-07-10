@@ -157,11 +157,11 @@
     <nav class="nav-left">
       <a href="index.html">Home</a>
       <a href="dashboard.html" class="active">My Dashboard</a>
-      <a href="adminpanel.html">Admin Panel</a>
+      <a href="adminpanel.html" id="admin-panel-tab" style="display:none;">Admin Panel</a>
     </nav>
 
     <nav class="nav-right">
-      <p>Admin</p>
+      <p id="user-info">Student</p>
       <img src="album/profile.jpg" alt="Profile" class="profile-icon">
       <a href="logout.html">Logout</a>
     </nav>
@@ -200,39 +200,76 @@
       </form>
 
       <div class="success-message">
-        ✔ Your request to borrow 1 Projector(s) has been approved. (6/20/2025, 10:16:04 PM)
+         Your request to borrow 1 Projector(s) has been approved. (6/20/2025, 10:16:04 PM)
       </div>
 
       <h2>Borrowing History</h2>
+      <div id="offense-history" style="margin: 0px 0px 1.5rem; background: rgb(255, 251, 230); padding: 1rem; border-radius: 8px; border: 1px solid rgb(252, 189, 21); font-weight: bold; text-align: center;">Offense Count: 0<br>
+      </div>
+
       <table>
         <thead>
           <tr>
-            <th>Name</th>
+            <th>Student Number</th>
             <th>Item</th>
-            <th>Quantity</th>
-            <th>Type</th>
+            <th>Unique ID</th>
+            <th>Status</th>
+            <th>Indicator</th>
             <th>Date</th>
+            
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td>Kyl</td>
+            <td>202410921</td>
             <td>Projector</td>
-            <td>1</td>
-            <td>Borrow</td>
-            <td>6/20/2025, 11:01:20</td>
+            <td>12391-1</td>
+            <td>Approved Borrow Request</td>
+            <td style="text-align:center;"><span style="display:inline-block;width:16px;height:16px;border-radius:50%;background:#4caf50;border:2px solid #fff;box-shadow:0 0 4px #ccc;"></span></td>
+            <td>6/20/2025, 10:16:04 PM</td>
           </tr>
           <tr>
-            <td>Jerahmeel</td>
+            <td>202410922</td>
             <td>Keyboard</td>
-            <td>2</td>
-            <td>Return</td>
-            <td>6/20/2025, 11:01:20</td>
+            <td>0561-2</td>
+            <td>Rejected Borrow Request</td>
+            <td style="text-align:center;"><span style="display:inline-block;width:16px;height:16px;border-radius:50%;background:#ff3300;border:2px solid #fff;box-shadow:0 0 4px #ccc;"></span></td>
+            <td>6/20/2025, 11:01:20 AM</td>
+          </tr>
+           <tr>
+            <td>202410923</td>
+            <td>HDMI Cable</td>
+            <td>65156-1</td>
+            <td>Pending Borrow Request</td>
+            <td style="text-align:center;"><span style="display:inline-block;width:16px;height:16px;border-radius:50%;background:#ff9100;border:2px solid #fff;box-shadow:0 0 4px #ccc;"></span></td>
+            <td>6/20/2025, 11:01:20 AM</td>
           </tr>
         </tbody>
       </table>
     </div>
   </div>
+  <script>
+    // Display user info from sessionStorage
+    const user = JSON.parse(sessionStorage.getItem('igrabUser'));
+    if (user) {
+      let info = user.username;
+      if (user.studentNumber) {
+        info += ` | ${user.studentNumber}`;
+      } else {
+        info += ` | ${user.role}`;
+      }
+      document.getElementById('user-info').textContent = info;
+      // Show Admin Panel tab if user is admin
+      if (user.role === 'Admin') {
+        document.getElementById('admin-panel-tab').style.display = '';
+      }
+    }
+  </script>
+  <footer>
+    <p>&copy; 2025 iGrab. All rights reserved.</p>
+    <p>Developed by: Maina, Maliñana, Romero, Valencia<br>Students of FEU - Institute of Technology</p>
+    <p>Contact: valnc.kyl@gmail.com</p>
+  </footer>
 </body>
 </html>
 

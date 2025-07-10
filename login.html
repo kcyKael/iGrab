@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>iGrab Login</title>
+  <title>Log In | iGrab</title>
   <link rel="stylesheet" href="style.css"/>
   <link rel="icon" href="album/logo_igrab.png" type="image/png"/>
   <style>
@@ -115,8 +115,8 @@
     <p>Login to your account</p>
 
     <form class="login-form" action="index.html" method="POST">
-      <label for="email">Email</label>
-      <input type="email" id="email" name="email" placeholder="Enter your email" required />
+      <label for="username">Username</label>
+      <input type="text" id="username" name="username" placeholder="Enter your username" required />
 
       <label for="password">Password</label>
       <input type="password" id="password" name="password" placeholder="Enter your password" required />
@@ -127,7 +127,39 @@
     </form>
   </div>
 
-  <script src="scripts.js"></script>
+  <script>
+    // User database
+    const users = [
+      { username: 'Jerah', password: 'jer123', role: 'Student', studentNumber: '202410990' },
+      { username: 'Erin', password: 'eri123', role: 'Student', studentNumber: '202410991' },
+      { username: 'Emran', password: 'emr123', role: 'Admin' },
+      { username: 'Kyl', password: 'kyl123', role: 'Admin' }
+    ];
+
+    document.querySelector('.login-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const user = users.find(u => u.username === username && u.password === password);
+      if (user) {
+        // Optionally store user info in sessionStorage/localStorage
+        sessionStorage.setItem('igrabUser', JSON.stringify(user));
+        window.location.href = 'index.html';
+      } else {
+        // Show error message
+        let err = document.getElementById('login-error');
+        if (!err) {
+          err = document.createElement('div');
+          err.id = 'login-error';
+          err.style.color = '#ff5252';
+          err.style.marginTop = '10px';
+          err.style.fontWeight = 'bold';
+          document.querySelector('.login-container').appendChild(err);
+        }
+        err.textContent = 'Invalid username or password.';
+      }
+    });
+  </script>
 </body>
 </html>
 
