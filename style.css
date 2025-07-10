@@ -21,6 +21,12 @@ header {
     justify-content: space-between;
 }
 
+header .nav-left a,
+header .nav-right a,
+header .nav-right p {
+  font-size: 1.15rem;
+}
+
 .logo {
     max-width:200px;
     height: auto;
@@ -65,8 +71,8 @@ header h1 {
 }
 
 .profile-icon {
-    width: 30px;
-    height: 30px;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
     background-color: #ddd;
 }

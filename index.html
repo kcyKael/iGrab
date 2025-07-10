@@ -1,99 +1,167 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>iGrab</title>
-    <link rel="icon" href="album/logo_igrab.png" type="image/png">
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Home | iGrab</title>
+  <link rel="icon" href="album/logo_igrab.png" type="image/png">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .equipment-buttons {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .edit-btn,
+    .inc-btn,
+    .dec-btn,
+    .del-btn {
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .edit-btn {
+      background-color: #1f1f1f;
+      color: white;
+    }
+
+    .inc-btn {
+      background-color: green;
+      color: yellow;
+    }
+
+    .dec-btn {
+      background-color: red;
+      color: white;
+    }
+
+    .del-btn {
+      background-color: grey;
+      color: white;
+    }
+  </style>
 </head>
 <body>
-    <header>
-        <img src="album/logo_igrab.png" alt="Logo" class="logo">
-        <!-- <h1>iGrab</h1> -->
-        
-        <nav class="nav-left">
-            <a href="index.html" class="active">Home</a>
-            <a href="dashboard.html">My Dashboard</a>
-            <a href="adminpanel.html">Admin Panel</a>
-        </nav>
-        
-        <nav class="nav-right">
-            <p>Admin</p>
-            <img src="album/profile.jpg" alt="Profile" class="profile-icon">
-            <a href="logout.html">Logout</a>
-        </nav>
-    </header>
-    
-    <div class="container">
-        <!-- Tracker Section -->
-        <section class="tracker-section">
-            <h2>Equipment Tracker</h2>
-            <div class="tracker-cards">
-                <div class="tracker-card">
-                    <h3>Total Equipment</h3>
-                    <p class="count">150</p>
-                </div>
-                <div class="tracker-card">
-                    <h3>Available</h3>
-                    <p class="count available">120</p>
-                </div>
-                <div class="tracker-card">
-                    <h3>Borrowed</h3>
-                    <p class="count borrowed">30</p>
-                </div>
-                <div class="tracker-card">
-                    <h3>Most Borrowed</h3>
-                    <p class="count">Laptop</p>
-                </div>
-            </div>
-        </section>
+  <header>
+    <img src="album/logo_igrab.png" alt="Logo" class="logo">
+    <nav class="nav-left">
+      <a href="index.html" class="active">Home</a>
+      <a href="dashboard.html">My Dashboard</a>
+      <a href="adminpanel.html" id="admin-panel-tab" style="display:none;">Admin Panel</a>
+    </nav>
+    <nav class="nav-right">
+      <p id="user-info">Admin</p>
+      <img src="album/profile.jpg" alt="Profile" class="profile-icon">
+      <a href="logout.html">Logout</a>
+    </nav>
+  </header>
 
-        <!-- Available Equipment Section -->
-        <section class="equipment-section">
-            <h2>Available Equipment</h2>
-            <div class="equipment-grid">
-                <div class="equipment-card">
-                    <div class="equipment-icon">💻</div>
-                    <div class="equipment-info">
-                        <h3>Laptop</h3>
-                        <p>Available: 15</p>
-                        <p>Borrowed: 5</p>
-                    </div>
-                </div>
-                
-                <div class="equipment-card">
-                    <div class="equipment-icon">📽️</div>
-                    <div class="equipment-info">
-                        <h3>Projector</h3>
-                        <p>Available: 8</p>
-                        <p>Borrowed: 2</p>
-                    </div>
-                </div>
-                
-                <div class="equipment-card">
-                    <div class="equipment-icon">🔌</div>
-                    <div class="equipment-info">
-                        <h3>HDMI Cables</h3>
-                        <p>Available: 25</p>
-                        <p>Borrowed: 10</p>
-                    </div>
-                </div>
-            
-                <div class="equipment-card">
-                    <div class="equipment-icon"></div>
-                    <div class="equipment-info">       
-                    </div>
-                </div>
-            </div>
-        </section>
-    </div>
+  <div class="container">
+    <!-- Tracker Section -->
+    <section class="tracker-section">
+      <h2>Equipment Tracker</h2>
+      <div class="tracker-cards">
+        <div class="tracker-card">
+          <h3>Total Equipment</h3>
+          <p class="count">65</p>
+        </div>
+        <div class="tracker-card">
+          <h3>Available</h3>
+          <p class="count available">48</p>
+        </div>
+        <div class="tracker-card">
+          <h3>Borrowed</h3>
+          <p class="count borrowed">17</p>
+        </div>
+        <div class="tracker-card">
+          <h3>Most Borrowed</h3>
+          <p class="count">Laptop</p>
+        </div>
+      </div>
+    </section>
 
-    <footer>
-        <p>&copy; 2025 iGrab. All rights reserved.</p>
-        <p>Developed by: Maina E., Maliñana E., Romero J., Valencia, K. </p>
-        <p>Contact: <a href="mailto:valnc.kyl@gmail.com">valnc.kyl@gmail.com</a></p>
-    </footer>
+    <!-- Available Equipment Section -->
+    <section class="equipment-section">
+      <h2>Available Equipment</h2>
+      <div class="equipment-grid">
+        <!-- Laptop -->
+        <div class="equipment-card">
+          <div class="equipment-icon">💻</div>
+          <div class="equipment-info">
+            <h3>Laptop</h3>
+            <p>Available: 15</p>
+            <p>Borrowed: 5</p>
+            <div class="equipment-buttons">
+              <button class="edit-btn">Edit</button>
+              <button class="inc-btn">+</button>
+              <button class="dec-btn">-</button>
+              <button class="del-btn">🗑️</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Projector -->
+        <div class="equipment-card">
+          <div class="equipment-icon">📽️</div>
+          <div class="equipment-info">
+            <h3>Projector</h3>
+            <p>Available: 8</p>
+            <p>Borrowed: 2</p>
+            <div class="equipment-buttons">
+              <button class="edit-btn">Edit</button>
+              <button class="inc-btn">+</button>
+              <button class="dec-btn">-</button>
+              <button class="del-btn">🗑️</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- HDMI Cables -->
+        <div class="equipment-card">
+          <div class="equipment-icon">🔌</div>
+          <div class="equipment-info">
+            <h3>HDMI Cables</h3>
+            <p>Available: 25</p>
+            <p>Borrowed: 10</p>
+            <div class="equipment-buttons">
+              <button class="edit-btn">Edit</button>
+              <button class="inc-btn">+</button>
+              <button class="dec-btn">-</button>
+              <button class="del-btn">🗑️</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    <p>&copy; 2025 iGrab. All rights reserved.</p>
+    <p>Developed by: Maina, Maliñana, Romero, Valencia<br>Students of FEU - Institute of Technology</p>
+    <p>Contact: valnc.kyl@gmail.com</p>
+  </footer>
+  <script>
+    // Display user info from sessionStorage
+    const user = JSON.parse(sessionStorage.getItem('igrabUser'));
+    if (user) {
+      let info = user.username;
+      if (user.studentNumber) {
+        info += ` | ${user.studentNumber}`;
+      } else {
+        info += ` | ${user.role}`;
+      }
+      document.getElementById('user-info').textContent = info;
+      // Show Admin Panel tab if user is admin
+      if (user.role === 'Admin') {
+        document.getElementById('admin-panel-tab').style.display = '';
+      }
+    }
+  </script>
 </body>
 </html>
 
