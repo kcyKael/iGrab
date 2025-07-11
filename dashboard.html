@@ -71,7 +71,7 @@
       width: 100%;
       box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     }
-
+    
     h2 {
       margin-top: 0;
       font-size: 1.2rem;
@@ -145,6 +145,8 @@
       background-color: #f1f1f1;
     }
   </style>
+
+
 </head>
 <body>
 
@@ -170,85 +172,51 @@
   <div class="dashboard-wrapper">
     <div class="dashboard-container">
       <h2>Borrow Equipment</h2>
-      <form class="equipment-form">
-        <input type="text" placeholder="Your Name" required />
-        <select>
+      <form class="equipment-form" id="borrow-form">
+        <input type="text" id="student-number" placeholder="Student Number" required readonly />
+        <select id="borrow-item-select" required>
           <option value="">Select Item</option>
-          <option>Projector</option>
-          <option>Laptop</option>
-          <option>Keyboard</option>
-          <option>HDMI Cable</option>
-          <option>Tablet</option>
         </select>
-        <input type="number" placeholder="Quantity" required />
+        <input type="number" id="borrow-qty" placeholder="Quantity" min="1" required />
         <button type="submit">BORROW</button>
       </form>
 
       <h2>Return Equipment</h2>
-      <form class="equipment-form">
-        <input type="text" placeholder="Your Name" required />
-        <select>
+      <form class="equipment-form" id="return-form">
+        <input type="text" id="return-student-number" placeholder="Student Number" required readonly />
+        <select id="return-item-select" required>
           <option value="">Select Item</option>
-          <option>Projector</option>
-          <option>Laptop</option>
-          <option>Keyboard</option>
-          <option>HDMI Cable</option>
-          <option>Tablet</option>
         </select>
-        <input type="number" placeholder="Quantity" required />
         <button type="submit">RETURN</button>
       </form>
 
       <div class="success-message">
-         Your request to borrow 1 Projector(s) has been approved. (6/20/2025, 10:16:04 PM)
+
       </div>
 
       <h2>Borrowing History</h2>
       <div id="offense-history" style="margin: 0px 0px 1.5rem; background: rgb(255, 251, 230); padding: 1rem; border-radius: 8px; border: 1px solid rgb(252, 189, 21); font-weight: bold; text-align: center;">Offense Count: 0<br>
+         
+      </div> 
+      <div style="max-height: 250px; overflow-y: auto; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 1em;">
+        <table>
+          <thead id="history-thead">
+            <tr id="history-header-row">
+              <!-- Headers will be rendered by JS -->
+            </tr>
+          </thead>
+          <tbody id="history-tbody">
+          </tbody>
+        </table>
       </div>
-
-      <table>
-        <thead>
-          <tr>
-            <th>Student Number</th>
-            <th>Item</th>
-            <th>Unique ID</th>
-            <th>Status</th>
-            <th>Indicator</th>
-            <th>Date</th>
-            
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>202410921</td>
-            <td>Projector</td>
-            <td>12391-1</td>
-            <td>Approved Borrow Request</td>
-            <td style="text-align:center;"><span style="display:inline-block;width:16px;height:16px;border-radius:50%;background:#4caf50;border:2px solid #fff;box-shadow:0 0 4px #ccc;"></span></td>
-            <td>6/20/2025, 10:16:04 PM</td>
-          </tr>
-          <tr>
-            <td>202410922</td>
-            <td>Keyboard</td>
-            <td>0561-2</td>
-            <td>Rejected Borrow Request</td>
-            <td style="text-align:center;"><span style="display:inline-block;width:16px;height:16px;border-radius:50%;background:#ff3300;border:2px solid #fff;box-shadow:0 0 4px #ccc;"></span></td>
-            <td>6/20/2025, 11:01:20 AM</td>
-          </tr>
-           <tr>
-            <td>202410923</td>
-            <td>HDMI Cable</td>
-            <td>65156-1</td>
-            <td>Pending Borrow Request</td>
-            <td style="text-align:center;"><span style="display:inline-block;width:16px;height:16px;border-radius:50%;background:#ff9100;border:2px solid #fff;box-shadow:0 0 4px #ccc;"></span></td>
-            <td>6/20/2025, 11:01:20 AM</td>
-          </tr>
-        </tbody>
-      </table>
     </div>
   </div>
   <script>
+    // Request notification permission on page load
+    if ('Notification' in window && Notification.permission !== 'granted') {
+      Notification.requestPermission();
+    }
+
     // Display user info from sessionStorage
     const user = JSON.parse(sessionStorage.getItem('igrabUser'));
     if (user) {
@@ -263,7 +231,444 @@
       if (user.role === 'Admin') {
         document.getElementById('admin-panel-tab').style.display = '';
       }
+      // Auto-fill student number for borrow
+      if (user.studentNumber) {
+        document.getElementById('student-number').value = user.studentNumber;
+      } else if (user.adminId) {
+        document.getElementById('student-number').value = user.adminId;
+      }
+      // Auto-fill student number for return
+      if (user.studentNumber) {
+        document.getElementById('return-student-number').value = user.studentNumber;
+      } else if (user.adminId) {
+        document.getElementById('return-student-number').value = user.adminId;
+      }
     }
+
+    // --- Borrow Logic ---
+    // Get equipment list from localStorage (shared with index.html)
+    function getEquipmentList() {
+      return JSON.parse(localStorage.getItem('equipmentList'));
+    }
+    function setEquipmentList(list) {
+      localStorage.setItem('equipmentList', JSON.stringify(list));
+    }
+    // Get and set borrowed items per user
+    function getBorrowedByUser() {
+      return JSON.parse(localStorage.getItem('borrowedByUser') || '{}');
+    }
+    function setBorrowedByUser(obj) {
+      localStorage.setItem('borrowedByUser', JSON.stringify(obj));
+    }
+    // Helper to get the current user's key (studentNumber or adminId)
+    function getUserKey() {
+      return (user && (user.studentNumber || user.adminId)) || '';
+    }
+    // Populate select with available equipment names
+    function populateBorrowSelect() {
+      const list = getEquipmentList();
+      const select = document.getElementById('borrow-item-select');
+      select.innerHTML = '<option value="">Select Item</option>';
+      list.forEach(equip => {
+        select.innerHTML += `<option value="${equip.name}">${equip.name}</option>`;
+      });
+    }
+    populateBorrowSelect();
+
+    // --- Pending Request Logic ---
+    function getPendingRequests() {
+      return JSON.parse(localStorage.getItem('pendingRequests') || '[]');
+    }
+    function setPendingRequests(arr) {
+      localStorage.setItem('pendingRequests', JSON.stringify(arr));
+    }
+    // Feedback logic
+    function getPendingFeedback(userKey) {
+      const all = JSON.parse(localStorage.getItem('pendingFeedback') || '{}');
+      return all[userKey] || null;
+    }
+    function setPendingFeedback(userKey, msg) {
+      const all = JSON.parse(localStorage.getItem('pendingFeedback') || '{}');
+      all[userKey] = msg;
+      localStorage.setItem('pendingFeedback', JSON.stringify(all));
+    }
+    function clearPendingFeedback(userKey) {
+      const all = JSON.parse(localStorage.getItem('pendingFeedback') || '{}');
+      delete all[userKey];
+      localStorage.setItem('pendingFeedback', JSON.stringify(all));
+    }
+    // Show feedback if present
+    function showFeedbackIfAny() {
+      const userKey = getUserKey();
+      const msg = getPendingFeedback(userKey);
+      if (msg) {
+        let feedbackDiv = document.createElement('div');
+        feedbackDiv.className = 'success-message';
+        feedbackDiv.style.background = msg.type === 'approved' ? '#d7f7d0' : '#ffd6d6';
+        feedbackDiv.style.color = msg.type === 'approved' ? '#145b21' : '#b71c1c';
+        feedbackDiv.textContent = msg.text;
+        document.querySelector('.dashboard-container').insertBefore(feedbackDiv, document.querySelector('.dashboard-container').firstChild);
+        setTimeout(() => feedbackDiv.remove(), 5000);
+        clearPendingFeedback(userKey);
+      }
+    }
+    showFeedbackIfAny();
+
+    // Hide success message if blank
+    function hideEmptySuccessMessage() {
+      const msgDiv = document.querySelector('.success-message');
+      if (msgDiv && (!msgDiv.textContent || !msgDiv.textContent.trim())) {
+        msgDiv.style.display = 'none';
+      }
+    }
+    hideEmptySuccessMessage();
+
+    // Handle borrow form submit
+    document.getElementById('borrow-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const userKey = getUserKey();
+      const itemName = document.getElementById('borrow-item-select').value;
+      const qty = parseInt(document.getElementById('borrow-qty').value, 10);
+      if (!itemName || isNaN(qty) || qty < 1) return;
+      let list = getEquipmentList();
+      const equip = list.find(eq => eq.name === itemName);
+      if (!equip) return alert('Item not found.');
+      if (equip.items.length < qty) return alert('Not enough available items to borrow.');
+      // Assign unique IDs (but do not update inventory yet)
+      const borrowedIds = equip.items.slice(0, qty);
+      // Add pending request
+      let pending = getPendingRequests();
+      pending.unshift({
+        userKey,
+        type: 'borrow',
+        item: itemName,
+        uniqueIds: borrowedIds,
+        date: new Date().toLocaleString(),
+        status: 'Pending Approval'
+      });
+      setPendingRequests(pending);
+      // Add to history as pending
+      addHistoryEntry({
+        studentNumber: userKey,
+        item: itemName,
+        uniqueIds: borrowedIds,
+        status: 'Pending Approval',
+        date: new Date().toLocaleString()
+      });
+      renderHistory();
+      document.querySelector('.success-message').textContent = `Your request to borrow ${qty} ${itemName}(s) is pending admin approval.`;
+      // Update home page if open
+      if (window.opener && typeof window.opener.renderEquipment === 'function') {
+        window.opener.renderEquipment();
+      }
+      scheduleDueNotifications();
+      notifyIfPast3pm();
+    });
+
+    // --- Return Logic ---
+    function populateReturnSelect() {
+      const borrowedByUser = getBorrowedByUser();
+      const userKey = getUserKey();
+      const select = document.getElementById('return-item-select');
+      select.innerHTML = '<option value="">Select Item</option>';
+      if (!userKey || !borrowedByUser[userKey] || borrowedByUser[userKey].length === 0) return;
+      // Get all borrowed unique IDs for this user
+      const borrowedIds = borrowedByUser[userKey];
+      // Get equipment list to map IDs to equipment names
+      const equipmentList = getEquipmentList();
+      // Find which equipment types the user has borrowed
+      const borrowedTypes = {};
+      borrowedIds.forEach(id => {
+        const equip = equipmentList.find(eq => id.startsWith(eq.baseId + '-'));
+        if (equip) borrowedTypes[equip.name] = true;
+      });
+      Object.keys(borrowedTypes).forEach(name => {
+        select.innerHTML += `<option value="${name}">${name}</option>`;
+      });
+    }
+    populateReturnSelect();
+
+    document.getElementById('return-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const userKey = getUserKey();
+      const itemName = document.getElementById('return-item-select').value;
+      if (!itemName) return;
+      let borrowedByUser = getBorrowedByUser();
+      let equipmentList = getEquipmentList();
+      const equip = equipmentList.find(eq => eq.name === itemName);
+      if (!equip) return alert('Item not found.');
+      const userBorrowedIds = (borrowedByUser[userKey] || []).filter(id => id.startsWith(equip.baseId + '-'));
+      if (userBorrowedIds.length === 0) return alert('You have not borrowed this item.');
+      // Add pending return request
+      let pending = getPendingRequests();
+      pending.unshift({
+        userKey,
+        type: 'return',
+        item: itemName,
+        uniqueIds: userBorrowedIds,
+        date: new Date().toLocaleString(),
+        status: 'Pending Approval'
+      });
+      setPendingRequests(pending);
+      // Add to history as pending
+      addHistoryEntry({
+        studentNumber: userKey,
+        item: itemName,
+        uniqueIds: userBorrowedIds,
+        status: 'Pending Approval',
+        date: new Date().toLocaleString()
+      });
+      renderHistory();
+      document.querySelector('.success-message').textContent = `Your request to return ${itemName}(s) is pending admin approval.`;
+      // Update home page if open
+      if (window.opener && typeof window.opener.renderEquipment === 'function') {
+        window.opener.renderEquipment();
+      }
+      // Refresh return select
+      populateReturnSelect();
+    });
+
+    // --- Borrowing History Logic ---
+    function getHistory() {
+      return JSON.parse(localStorage.getItem('history') || '[]');
+    }
+    function setHistory(arr) {
+      localStorage.setItem('history', JSON.stringify(arr));
+    }
+    function addHistoryEntry(entry) {
+      const arr = getHistory();
+      arr.unshift(entry); // newest first
+      setHistory(arr);
+    }
+    function getUserInfoById(id) {
+      const users = JSON.parse(localStorage.getItem('userDirectory') || '[]');
+      return users.find(u => u.studentNumber === id || u.adminId === id);
+    }
+
+    // --- Offense Tracking Logic ---
+    function getOffenseCount() {
+      return JSON.parse(localStorage.getItem('offenseCount') || '{}');
+    }
+    function setOffenseCount(obj) {
+      localStorage.setItem('offenseCount', JSON.stringify(obj));
+    }
+    function getSuspensionEnd(userKey) {
+      const offenses = getOffenseCount();
+      return offenses[userKey] && offenses[userKey].suspensionEnd ? new Date(offenses[userKey].suspensionEnd) : null;
+    }
+    function isSuspended(userKey) {
+      const end = getSuspensionEnd(userKey);
+      if (!end) return false;
+      return new Date() < end;
+    }
+    function getOffenseType(count) {
+      if (count === 1) return 'Minor Offense';
+      if (count === 2) return 'Major Offense';
+      if (count >= 3) return 'Suspended';
+      return '';
+    }
+
+    // --- Overdue Detection and Offense Update ---
+    function updateOverdueAndOffenses() {
+      // Only apply offense logic for students
+      if (!user || user.role === 'Admin') return;
+      const arr = getHistory();
+      let changed = false;
+      const offenses = getOffenseCount();
+      const now = new Date();
+      const userKey = getUserKey();
+      arr.forEach(entry => {
+        // Only check for borrowed/approved and not already overdue or returned, and only for this user
+        if (
+          entry.studentNumber === userKey &&
+          (entry.status && (entry.status.toLowerCase().includes('approved') || entry.status.toLowerCase().includes('borrowed')))
+          && entry.date && !entry.status.toLowerCase().includes('overdue') && !entry.status.toLowerCase().includes('returned')
+        ) {
+          const borrowDate = new Date(entry.date);
+          // 4pm of borrow date
+          const fourPm = new Date(borrowDate);
+          fourPm.setHours(16, 0, 0, 0);
+          if (now > fourPm && borrowDate.toDateString() === now.toDateString()) {
+            // Mark as overdue
+            entry.status = 'Overdue';
+            changed = true;
+            // Offense tracking
+            if (!offenses[userKey]) {
+              offenses[userKey] = { count: 0, lastOffense: null, suspensionEnd: null };
+            }
+            // Only increment if not already counted for this entry
+            if (!entry.offenseMarked) {
+              offenses[userKey].count += 1;
+              offenses[userKey].lastOffense = now.toISOString();
+              entry.offenseMarked = true;
+              // Suspension logic
+              if (offenses[userKey].count >= 3) {
+                const suspensionEnd = new Date(now);
+                suspensionEnd.setDate(suspensionEnd.getDate() + 7);
+                offenses[userKey].suspensionEnd = suspensionEnd.toISOString();
+              }
+            }
+          }
+        }
+      });
+      if (changed) setHistory(arr);
+      setOffenseCount(offenses);
+    }
+
+    // --- Render Offense Count and Suspension ---
+    function renderOffenseInfo() {
+      // Only show for students
+      if (!user || user.role === 'Admin') {
+        document.getElementById('offense-history').innerHTML = '';
+        return;
+      }
+      const userKey = getUserKey();
+      const offenses = getOffenseCount();
+      const offense = offenses[userKey] || { count: 0, lastOffense: null, suspensionEnd: null };
+      let offenseText = `Offense Count: ${offense.count}<br>`;
+      if (offense.count > 0) {
+        offenseText += `Last Offense: ${offense.lastOffense ? new Date(offense.lastOffense).toLocaleString() : ''}<br>`;
+        offenseText += `Status: ${getOffenseType(offense.count)}`;
+      }
+      if (isSuspended(userKey)) {
+        offenseText += `<br><span style="color: violet; font-weight: bold;">Account Suspended until ${getSuspensionEnd(userKey).toLocaleString()}</span>`;
+      }
+      document.getElementById('offense-history').innerHTML = offenseText;
+    }
+
+    // --- Disable Borrow/Return if Suspended ---
+    function enforceSuspensionUI() {
+      // Only enforce for students
+      if (!user || user.role === 'Admin') return;
+      const userKey = getUserKey();
+      if (isSuspended(userKey)) {
+        document.getElementById('borrow-form').querySelectorAll('input, select, button').forEach(el => el.disabled = true);
+        document.getElementById('return-form').querySelectorAll('input, select, button').forEach(el => el.disabled = true);
+        document.querySelector('.success-message').textContent = 'Your account is suspended and you cannot borrow or return equipment.';
+      } else {
+        document.getElementById('borrow-form').querySelectorAll('input, select, button').forEach(el => el.disabled = false);
+        document.getElementById('return-form').querySelectorAll('input, select, button').forEach(el => el.disabled = false);
+      }
+    }
+
+    // --- Modified renderHistory to show overdue (violet indicator) ---
+    function renderHistory() {
+      updateOverdueAndOffenses();
+      const arr = getHistory();
+      const tbody = document.getElementById('history-tbody');
+      const theadRow = document.getElementById('history-header-row');
+      const isAdmin = user && user.role === 'Admin';
+      // Render table headers
+      theadRow.innerHTML = isAdmin
+        ? `<th>Student/Admin Number</th><th>Name</th><th>Item</th><th>Unique ID</th><th>Status</th><th>Indicator</th><th>Date</th>`
+        : `<th>Student Number</th><th>Item</th><th>Unique ID</th><th>Status</th><th>Indicator</th><th>Date</th>`;
+      // Helper for indicator color
+      function getIndicatorColor(status) {
+        if (!status) return '#4caf50';
+        status = status.toLowerCase();
+        if (status.includes('overdue')) return 'violet';
+        if (status.includes('pending')) return '#ff9800'; // orange
+        if (status.includes('rejected')) return '#f44336'; // red
+        if (status.includes('approved') || status.includes('borrowed')) return '#4caf50'; // green
+        return '#4caf50';
+      }
+      // Render only the 5 latest records (newest first)
+      const filteredArr = arr
+        .filter(h => isAdmin || ((user && (h.studentNumber === (user.studentNumber || user.adminId)))));
+      // Render table rows
+      tbody.innerHTML = filteredArr
+        .map(h => {
+          const userInfo = getUserInfoById(h.studentNumber);
+          const name = userInfo ? userInfo.username : 'Unknown';
+          const role = userInfo ? userInfo.role : '';
+          const indicatorColor = getIndicatorColor(h.status);
+          return isAdmin
+            ? `<tr>
+                <td>${h.studentNumber}</td>
+                <td>${name} (${role})</td>
+                <td>${h.item}</td>
+                <td>${Array.isArray(h.uniqueIds) ? h.uniqueIds.join(', ') : h.uniqueIds}</td>
+                <td>${h.status || ''}</td>
+                <td style="text-align:center;"><span style="display:inline-block;width:16px;height:16px;border-radius:50%;background:${indicatorColor};border:2px solid #fff;box-shadow:0 0 4px #ccc;"></span></td>
+                <td>${h.date}</td>
+              </tr>`
+            : `<tr>
+                <td>${h.studentNumber}</td>
+                <td>${h.item}</td>
+                <td>${Array.isArray(h.uniqueIds) ? h.uniqueIds.join(', ') : h.uniqueIds}</td>
+                <td>${h.status || ''}</td>
+                <td style="text-align:center;"><span style="display:inline-block;width:16px;height:16px;border-radius:50%;background:${indicatorColor};border:2px solid #fff;box-shadow:0 0 4px #ccc;"></span></td>
+                <td>${h.date}</td>
+              </tr>`;
+        }).join('');
+      renderOffenseInfo();
+      enforceSuspensionUI();
+    }
+    renderHistory();
+
+    // --- Push Notification Logic ---
+    function scheduleDueNotifications() {
+      if (!('Notification' in window) || Notification.permission !== 'granted') return;
+      const arr = getHistory();
+      const userKey = getUserKey();
+      const now = new Date();
+      arr.forEach(entry => {
+        if (
+          entry.studentNumber === userKey &&
+          entry.status &&
+          (entry.status.toLowerCase().includes('approved') || entry.status.toLowerCase().includes('borrowed')) &&
+          entry.date
+        ) {
+          const borrowDate = new Date(entry.date);
+          if (borrowDate.toDateString() === now.toDateString()) {
+            const threePm = new Date(borrowDate);
+            threePm.setHours(15, 0, 0, 0); // 3:00 PM
+            if (now < threePm) {
+              const msUntil3pm = threePm - now;
+              setTimeout(() => {
+                new Notification("iGrab Reminder", {
+                  body: "You have borrowed equipment due for return by 4pm today. Please return it on time to avoid penalties.",
+                  icon: "album/logo_igrab.png"
+                });
+              }, msUntil3pm);
+            }
+          }
+        }
+      });
+    }
+
+    function notifyIfPast3pm() {
+      if (!('Notification' in window) || Notification.permission !== 'granted') return;
+      const arr = getHistory();
+      const userKey = getUserKey();
+      const now = new Date();
+      arr.forEach(entry => {
+        if (
+          entry.studentNumber === userKey &&
+          entry.status &&
+          (entry.status.toLowerCase().includes('approved') || entry.status.toLowerCase().includes('borrowed')) &&
+          entry.date
+        ) {
+          const borrowDate = new Date(entry.date);
+          if (borrowDate.toDateString() === now.toDateString()) {
+            const threePm = new Date(borrowDate);
+            threePm.setHours(15, 0, 0, 0); // 3:00 PM
+            const fourPm = new Date(borrowDate);
+            fourPm.setHours(16, 0, 0, 0); // 4:00 PM
+            if (now > threePm && now < fourPm) {
+              new Notification("iGrab Reminder", {
+                body: "You have borrowed equipment due for return by 4pm today. Please return it on time to avoid penalties.",
+                icon: "album/logo_igrab.png"
+              });
+            }
+          }
+        }
+      });
+    }
+
+    // Call notification functions after rendering history
+    scheduleDueNotifications();
+    notifyIfPast3pm();
   </script>
   <footer>
     <p>&copy; 2025 iGrab. All rights reserved.</p>

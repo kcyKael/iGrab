@@ -107,19 +107,26 @@
   </header>
 
   <div class="container">
+
     <!-- ADMIN PANEL SECTION -->
     <section class="admin-panel">
-      <h2>Admin Panel</h2>
+      <h2>Admin Panel</h2><br>
+      <h3>Inventory Manager</h3> <br>
       <div class="admin-controls">
+        
+        <input type="text" placeholder="Icon (Emoji 🎮)" class="admin-input">
         <input type="text" placeholder="Equipment Name" class="admin-input">
         <input type="text" placeholder="Model" class="admin-input">
         <input type="text" placeholder="Specs" class="admin-input">
         <button class="btn green">Add Equipment</button>
         <button class="btn red">Reset Inventory</button>
       </div>
+   
+  
 
+      <br>
       <div class="pending-requests">
-        <h3>Pending Borrow Requests</h3>
+        <h3>Pending Requests</h3>
         <table class="request-table">
           <thead>
             <tr>
@@ -130,37 +137,8 @@
               <th>Action</th>
             </tr>
           </thead>
-          <tbody>
-            <tr>
-              <td>202410921</td>
-              <td>Projector</td>
-              <td>1234-1</td>
-              <td>6/20/2025, 11:01:20</td>
-              <td>
-              <button class="btn green">Approve</button>
-              <button class="btn red">Reject</button>
-            </td>
-            </tr>
-            <tr>
-              <td>202410922</td>
-              <td>Laptop</td>
-              <td>1234-2</td>
-              <td>6/20/2025, 11:01:20</td>
-              <td>
-              <button class="btn green">Approve</button>
-              <button class="btn red">Reject</button>
-            </td>
-            </tr>
-            <tr>
-              <td>202410923</td>
-              <td>Monitor</td>
-              <td>1234-3</td>
-              <td>6/20/2025, 11:01:20</td>
-              <td>
-              <button class="btn green">Approve</button>
-              <button class="btn red">Reject</button>
-            </td>
-            </tr>
+          <tbody id="pending-requests-tbody">
+            <!-- Requests will be rendered here by JavaScript -->
           </tbody>
         </table>
       </div>
@@ -185,6 +163,207 @@
       }
       document.getElementById('user-info').textContent = info;
     }
+
+    // Equipment management logic (shared with index.html)
+    function getEquipmentList() {
+      return JSON.parse(localStorage.getItem('equipmentList'));
+    }
+    function setEquipmentList(list) {
+      localStorage.setItem('equipmentList', JSON.stringify(list));
+    }
+    // Helper to generate a unique 4-digit baseId
+    function generateUniqueBaseId() {
+      const list = getEquipmentList();
+      let id;
+      do {
+        id = Math.floor(1000 + Math.random() * 9000).toString();
+      } while (list.some(e => e.baseId.toString() === id));
+      return id;
+    }
+    function getPendingRequests() {
+      return JSON.parse(localStorage.getItem('pendingRequests') || '[]');
+    }
+    function setPendingRequests(arr) {
+      localStorage.setItem('pendingRequests', JSON.stringify(arr));
+    }
+    function getBorrowedByUser() {
+      return JSON.parse(localStorage.getItem('borrowedByUser') || '{}');
+    }
+    function setBorrowedByUser(obj) {
+      localStorage.setItem('borrowedByUser', JSON.stringify(obj));
+    }
+    function getHistory() {
+      return JSON.parse(localStorage.getItem('history') || '[]');
+    }
+    function setHistory(arr) {
+      localStorage.setItem('history', JSON.stringify(arr));
+    }
+    function setPendingFeedback(userKey, msg) {
+      const all = JSON.parse(localStorage.getItem('pendingFeedback') || '{}');
+      all[userKey] = msg;
+      localStorage.setItem('pendingFeedback', JSON.stringify(all));
+    }
+    // Approve/Reject logic
+    function handleRequestAction(idx, action) {
+      let pending = getPendingRequests();
+      const req = pending[idx];
+      if (!req) return;
+      const list = getEquipmentList();
+      const equip = list.find(eq => eq.name === req.item);
+      let borrowedByUser = getBorrowedByUser();
+      let history = getHistory();
+      const userKey = req.userKey;
+      const now = new Date().toLocaleString();
+      if (action === 'approve') {
+        if (req.type === 'borrow') {
+          // Actually borrow: move from available to borrowed
+          if (equip && equip.items.length >= req.uniqueIds.length) {
+            req.uniqueIds.forEach(id => {
+              const idx = equip.items.indexOf(id);
+              if (idx !== -1) equip.items.splice(idx, 1);
+            });
+            if (!equip.borrowed) equip.borrowed = [];
+            equip.borrowed = equip.borrowed.concat(req.uniqueIds);
+            // Track borrowed items per user
+            if (!borrowedByUser[userKey]) borrowedByUser[userKey] = [];
+            borrowedByUser[userKey] = borrowedByUser[userKey].concat(req.uniqueIds);
+            // Increment lifetime borrowed
+            equip.lifetimeBorrowed = (equip.lifetimeBorrowed || 0) + req.uniqueIds.length;
+            setBorrowedByUser(borrowedByUser);
+            setEquipmentList(list);
+            // Add to history as approved
+            history.unshift({
+              studentNumber: userKey,
+              item: req.item,
+              uniqueIds: req.uniqueIds,
+              status: 'Borrow Approved',
+              date: now
+            });
+            setHistory(history);
+            setPendingFeedback(userKey, { type: 'approved', text: `Your borrow request for ${req.item} (${req.uniqueIds.join(', ')}) was approved!` });
+          }
+        } else if (req.type === 'return') {
+          // Actually return: move from borrowed to available
+          if (equip) {
+            // Remove from user's borrowed
+            borrowedByUser[userKey] = (borrowedByUser[userKey] || []).filter(id => !req.uniqueIds.includes(id));
+            // Remove from equipment's borrowed
+            equip.borrowed = (equip.borrowed || []).filter(id => !req.uniqueIds.includes(id));
+            // Add back to available
+            equip.items = equip.items.concat(req.uniqueIds).sort((a, b) => {
+              const aNum = parseInt(a.split('-')[1], 10);
+              const bNum = parseInt(b.split('-')[1], 10);
+              return aNum - bNum;
+            });
+            setBorrowedByUser(borrowedByUser);
+            setEquipmentList(list);
+            // Add to history as approved
+            history.unshift({
+              studentNumber: userKey,
+              item: req.item,
+              uniqueIds: req.uniqueIds,
+              status: 'Request Approved',
+              date: now
+            });
+            setHistory(history);
+            setPendingFeedback(userKey, { type: 'approved', text: `Your return request for ${req.item} (${req.uniqueIds.join(', ')}) was approved!` });
+          }
+        }
+      } else if (action === 'reject') {
+        // Add to history as rejected
+        history.unshift({
+          studentNumber: userKey,
+          item: req.item,
+          uniqueIds: req.uniqueIds,
+          status: req.type === 'borrow' ? 'Borrow Rejected' : 'Request Rejected',
+          date: now
+        });
+        setHistory(history);
+        setPendingFeedback(userKey, { type: 'rejected', text: `Your request for ${req.item} (${req.uniqueIds.join(', ')}) was rejected.` });
+      }
+      // Remove from pending
+      pending.splice(idx, 1);
+      setPendingRequests(pending);
+      renderPendingRequests();
+      // Update home page if open
+      if (window.opener && typeof window.opener.renderEquipment === 'function') {
+        window.opener.renderEquipment();
+      }
+    }
+    // Render pending requests table
+    function renderPendingRequests() {
+      const pending = getPendingRequests();
+      const tbody = document.getElementById('pending-requests-tbody');
+      tbody.innerHTML = pending.map((req, idx) => `
+        <tr>
+          <td>${req.userKey}</td>
+          <td>${req.item}</td>
+          <td>${Array.isArray(req.uniqueIds) ? req.uniqueIds.join(', ') : req.uniqueIds}</td>
+          <td>${req.date}</td>
+          <td>
+            <button class="btn green" onclick="handleRequestAction(${idx}, 'approve')">Approve</button>
+            <button class="btn red" onclick="handleRequestAction(${idx}, 'reject')">Reject</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+    // Expose for inline onclick
+    window.handleRequestAction = handleRequestAction;
+    renderPendingRequests();
+
+    // Add Equipment
+    document.querySelector('.btn.green').onclick = function() {
+      const inputs = document.querySelectorAll('.admin-input');
+      const icon = (inputs[0].value || '🔧').trim();
+      const name = (inputs[1].value || '').trim();
+      const model = (inputs[2].value || '').trim();
+      const specs = (inputs[3].value || '').trim();
+      if (!name || !model || !specs) {
+        alert('Please fill in all fields except icon.');
+        return;
+      }
+      // Check for duplicate name (case-insensitive)
+      const list = getEquipmentList();
+      if (list.some(e => e.name.toLowerCase() === name.toLowerCase())) {
+        alert('This item already exists, failed to add.');
+        return;
+      }
+      // Add new equipment
+      const baseId = generateUniqueBaseId();
+      list.push({
+        name,
+        baseId,
+        items: [],
+        borrowed: [],
+        lifetimeBorrowed: 0,
+        model,
+        specs,
+        icon
+      });
+      setEquipmentList(list);
+      alert('Equipment added successfully!');
+      // Optionally, clear inputs
+      inputs.forEach(i => i.value = '');
+      // Update home page if open
+      if (window.opener && typeof window.opener.renderEquipment === 'function') {
+        window.opener.renderEquipment();
+      }
+    };
+    // Reset Inventory
+    document.querySelector('.btn.red').onclick = function() {
+      if (!confirm('Are you sure you want to reset all inventory? This will set all available and borrowed counts to 0, but will not remove any items.')) return;
+      const list = getEquipmentList();
+      list.forEach(e => {
+        e.items = [];
+        e.borrowed = [];
+      });
+      setEquipmentList(list);
+      alert('Inventory reset!');
+      // Update home page if open
+      if (window.opener && typeof window.opener.renderEquipment === 'function') {
+        window.opener.renderEquipment();
+      }
+    };
   </script>
 
 </body>

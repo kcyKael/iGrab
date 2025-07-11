@@ -176,6 +176,7 @@ header h1 {
     align-items: center;
     gap: 1rem;
     transition: transform 0.3s ease;
+    position: relative; /* Added for tooltip positioning */
 }
 
 .equipment-card:hover {
@@ -204,6 +205,28 @@ header h1 {
     color: #666;
     font-size: 0.9rem;
     margin-bottom: 0.25rem;
+}
+
+.equipment-tooltip {
+  display: none;
+  position: absolute;
+  left: 50%;
+  top: -70px;
+  transform: translateX(-50%);
+  background: #fff;
+  border: 1px solid #aaa;
+  padding: 8px 12px;
+  border-radius: 6px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.25);
+  z-index: 9999;
+  font-size: 0.95em;
+  min-width: 200px;
+  max-width: 300px;
+  white-space: pre-line;
+  pointer-events: none;
+}
+.equipment-card:hover .equipment-tooltip {
+  display: block;
 }
 
 footer {
