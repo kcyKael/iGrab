@@ -65,78 +65,13 @@
     <!-- Tracker Section -->
     <section class="tracker-section">
       <h2>Equipment Tracker</h2>
-      <div class="tracker-cards">
-        <div class="tracker-card">
-          <h3>Total Equipment</h3>
-          <p class="count">65</p>
-        </div>
-        <div class="tracker-card">
-          <h3>Available</h3>
-          <p class="count available">48</p>
-        </div>
-        <div class="tracker-card">
-          <h3>Borrowed</h3>
-          <p class="count borrowed">17</p>
-        </div>
-        <div class="tracker-card">
-          <h3>Most Borrowed</h3>
-          <p class="count">Laptop</p>
-        </div>
-      </div>
+      <div class="tracker-cards" id="tracker-cards"></div>
     </section>
 
     <!-- Available Equipment Section -->
     <section class="equipment-section">
       <h2>Available Equipment</h2>
-      <div class="equipment-grid">
-        <!-- Laptop -->
-        <div class="equipment-card">
-          <div class="equipment-icon">💻</div>
-          <div class="equipment-info">
-            <h3>Laptop</h3>
-            <p>Available: 15</p>
-            <p>Borrowed: 5</p>
-            <div class="equipment-buttons">
-              <button class="edit-btn">Edit</button>
-              <button class="inc-btn">+</button>
-              <button class="dec-btn">-</button>
-              <button class="del-btn">🗑️</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Projector -->
-        <div class="equipment-card">
-          <div class="equipment-icon">📽️</div>
-          <div class="equipment-info">
-            <h3>Projector</h3>
-            <p>Available: 8</p>
-            <p>Borrowed: 2</p>
-            <div class="equipment-buttons">
-              <button class="edit-btn">Edit</button>
-              <button class="inc-btn">+</button>
-              <button class="dec-btn">-</button>
-              <button class="del-btn">🗑️</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- HDMI Cables -->
-        <div class="equipment-card">
-          <div class="equipment-icon">🔌</div>
-          <div class="equipment-info">
-            <h3>HDMI Cables</h3>
-            <p>Available: 25</p>
-            <p>Borrowed: 10</p>
-            <div class="equipment-buttons">
-              <button class="edit-btn">Edit</button>
-              <button class="inc-btn">+</button>
-              <button class="dec-btn">-</button>
-              <button class="del-btn">🗑️</button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <div class="equipment-grid" id="equipment-grid"></div>
     </section>
   </div>
 
@@ -161,6 +96,206 @@
         document.getElementById('admin-panel-tab').style.display = '';
       }
     }
+
+    // --- Equipment Management Logic ---
+    const defaultEquipment = [
+      { name: 'Projector', baseId: 7231, items: ['7231-1'], borrowed: [], lifetimeBorrowed: 0, model: 'Epson EB-FH52', specs: 'Full HD 3LCD' },
+      { name: 'Laptop', baseId: 8123, items: ['8123-1'], borrowed: [], lifetimeBorrowed: 0, model: 'ASUS TUF GAMING A15', specs: 'RYZEN 7 7435HS, 16GB ram, 1TB SSD' },
+      { name: 'HDMI Cable', baseId: 9001, items: ['9001-1'], borrowed: [], lifetimeBorrowed: 0, model: 'Vention', specs: '4K@60Hz, 3D Vision, Support HDR' }
+    ];
+
+    if (!localStorage.getItem('equipmentList')) {
+      localStorage.setItem('equipmentList', JSON.stringify(defaultEquipment));
+    }
+
+    function getEquipmentList() {
+      return JSON.parse(localStorage.getItem('equipmentList'));
+    }
+    function setEquipmentList(list) {
+      localStorage.setItem('equipmentList', JSON.stringify(list));
+    }
+
+    function incrementItem(idx) {
+      const list = getEquipmentList();
+      const item = list[idx];
+      // Prevent increment if there are borrowed items
+      if (item.borrowed && item.borrowed.length > 0) {
+        alert('Cannot increment: There are borrowed items for this equipment.');
+        return;
+      }
+      if (item.items.length >= 5) {
+        alert('Limit reached: You cannot have more than 5 available items.');
+        return;
+      }
+      const nextNum = item.items.length + 1;
+      item.items.push(`${item.baseId}-${nextNum}`);
+      setEquipmentList(list);
+      renderEquipment();
+    }
+    function decrementItem(idx) {
+      const list = getEquipmentList();
+      const item = list[idx];
+      // Prevent decrement if there are borrowed items or available is 0
+      if ((item.borrowed && item.borrowed.length > 0) || item.items.length === 0) {
+        alert('Cannot decrement: There are borrowed items or no available items.');
+        return;
+      }
+      item.items.pop();
+      setEquipmentList(list);
+      renderEquipment();
+    }
+    function editItem(idx) {
+      const qty = parseInt(prompt('Enter new quantity (max 5):'), 10);
+      if (!isNaN(qty) && qty >= 0) {
+        if (qty > 5) {
+          alert('Limit reached: You cannot have more than 5 available items.');
+          return;
+        }
+        const list = getEquipmentList();
+        const item = list[idx];
+        // Gather all borrowed IDs for this equipment from all users
+        const borrowedByUser = JSON.parse(localStorage.getItem('borrowedByUser') || '{}');
+        let allBorrowedIds = [];
+        Object.values(borrowedByUser).forEach(arr => {
+          allBorrowedIds = allBorrowedIds.concat((arr || []).filter(id => id.startsWith(item.baseId + '-')));
+        });
+        if (qty < allBorrowedIds.length) {
+          alert(`Cannot set available quantity to ${qty} because there are currently ${allBorrowedIds.length} borrowed items.`);
+          return;
+        }
+        const newAvailable = [];
+        for (let i = 1; i <= qty; i++) {
+          const id = `${item.baseId}-${i}`;
+          if (!allBorrowedIds.includes(id)) newAvailable.push(id);
+        }
+        item.items = newAvailable;
+        setEquipmentList(list);
+        renderEquipment();
+      }
+    }
+
+    // --- LIFETIME BORROW TRACKING ---
+    // Called from dashboard.html via window.opener if available
+    window.incrementLifetimeBorrowed = function(itemName, qty) {
+      const list = getEquipmentList();
+      const equip = list.find(eq => eq.name === itemName);
+      if (equip) {
+        equip.lifetimeBorrowed = (equip.lifetimeBorrowed || 0) + qty;
+        setEquipmentList(list);
+        renderEquipment();
+      }
+    }
+
+    // --- Trash/Delete Equipment Logic ---
+    function deleteEquipment(idx) {
+      const list = getEquipmentList();
+      const item = list[idx];
+      if (!item) return;
+      if (!confirm(`Are you sure you want to delete '${item.name}'? This action cannot be undone.`)) return;
+      // Preserve lifetimeBorrowed in analytics
+      let analytics = JSON.parse(localStorage.getItem('deletedEquipmentAnalytics') || '{}');
+      analytics[item.baseId] = {
+        name: item.name,
+        baseId: item.baseId,
+        lifetimeBorrowed: item.lifetimeBorrowed || 0
+      };
+      localStorage.setItem('deletedEquipmentAnalytics', JSON.stringify(analytics));
+      // Remove from borrowedByUser
+      let borrowedByUser = JSON.parse(localStorage.getItem('borrowedByUser') || '{}');
+      Object.keys(borrowedByUser).forEach(userKey => {
+        borrowedByUser[userKey] = (borrowedByUser[userKey] || []).filter(id => !id.startsWith(item.baseId + '-'));
+      });
+      localStorage.setItem('borrowedByUser', JSON.stringify(borrowedByUser));
+      // Remove from equipmentList
+      list.splice(idx, 1);
+      setEquipmentList(list);
+      alert('Item deleted successfully!');
+      renderEquipment();
+    }
+
+    // Ensure all equipment items have model and specs (data migration)
+    function ensureEquipmentModels() {
+      const modelSpecs = {
+        'Projector': { model: 'Epson EB-FH52', specs: 'Full HD 3LCD' },
+        'Laptop': { model: 'ASUS TUF GAMING A15', specs: 'RYZEN 7 7435HS, 16GB ram, 1TB SSD' },
+        'HDMI Cable': { model: 'Vention', specs: '4K@60Hz, 3D Vision, Support HDR' }
+      };
+      let list = getEquipmentList();
+      let changed = false;
+      list.forEach(equip => {
+        if (!equip.model || !equip.specs) {
+          const ms = modelSpecs[equip.name];
+          if (ms) {
+            equip.model = ms.model;
+            equip.specs = ms.specs;
+            changed = true;
+          }
+        }
+      });
+      if (changed) setEquipmentList(list);
+    }
+    ensureEquipmentModels();
+
+    // Render equipment cards and tracker
+    function renderEquipment() {
+      const list = getEquipmentList();
+      // Tracker
+      let total = 0, available = 0, borrowed = 0, mostBorrowed = '';
+      let maxBorrowed = 0;
+      let maxLifetime = 0, mostLifetime = '';
+      list.forEach(equip => {
+        total += equip.items.length + (equip.borrowed ? equip.borrowed.length : 0);
+        available += equip.items.length;
+        borrowed += equip.borrowed ? equip.borrowed.length : 0;
+        if ((equip.borrowed ? equip.borrowed.length : 0) > maxBorrowed) {
+          maxBorrowed = equip.borrowed.length;
+        }
+        if ((equip.lifetimeBorrowed || 0) > maxLifetime) {
+          maxLifetime = equip.lifetimeBorrowed;
+          mostLifetime = equip.name;
+        }
+      });
+      document.getElementById('tracker-cards').innerHTML = `
+        <div class="tracker-card"><h3>Total Equipment</h3><p class="count">${total}</p></div>
+        <div class="tracker-card"><h3>Available</h3><p class="count available">${available}</p></div>
+        <div class="tracker-card"><h3>Borrowed</h3><p class="count borrowed">${borrowed}</p></div>
+        <div class="tracker-card"><h3>Most Borrowed</h3><p class="count">${mostLifetime || '-'}</p></div>
+      `;
+      // Equipment grid
+      const isAdmin = (user && user.role === 'Admin');
+      document.getElementById('equipment-grid').innerHTML = list.map((equip, idx) => `
+        <div class="equipment-card" style="position:relative;">
+          <div class="equipment-icon">${equip.icon || (equip.name === 'Laptop' ? '💻' : equip.name === 'Projector' ? '📽️' : equip.name === 'HDMI Cable' ? '🔌' : '🔧')}</div>
+          <div class="equipment-info">
+            <h3>${equip.name}</h3>
+            <p>Available: ${equip.items.length}</p>
+            <p>Borrowed: ${equip.borrowed ? equip.borrowed.length : 0}</p>
+            ${isAdmin ? `<div class="equipment-buttons">
+              <button class="edit-btn" data-idx="${idx}">Edit</button>
+              <button class="inc-btn" data-idx="${idx}">+</button>
+              <button class="dec-btn" data-idx="${idx}">-</button>
+              <button class="del-btn" data-idx="${idx}">🗑️</button>
+            </div>` : ''}
+            <div style="font-size:0.9em;margin-top:6px;">IDs: <span style="word-break:break-all;">${equip.items.join(', ') || '-'}</span></div>
+            <div class="equipment-tooltip">
+              <strong>Name:</strong> ${equip.name}<br>
+              <strong>Model:</strong> ${equip.model}<br>
+              <strong>Specs:</strong> ${equip.specs}
+            </div>
+          </div>
+        </div>
+      `).join('');
+      // Attach event listeners only if admin
+      if (isAdmin) {
+        document.querySelectorAll('.inc-btn').forEach(btn => btn.onclick = e => incrementItem(+btn.dataset.idx));
+        document.querySelectorAll('.dec-btn').forEach(btn => btn.onclick = e => decrementItem(+btn.dataset.idx));
+        document.querySelectorAll('.edit-btn').forEach(btn => btn.onclick = e => editItem(+btn.dataset.idx));
+        document.querySelectorAll('.del-btn').forEach(btn => btn.onclick = e => deleteEquipment(+btn.dataset.idx));
+      }
+    }
+
+    // Initial render
+    renderEquipment();
   </script>
 </body>
 </html>

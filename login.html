@@ -27,6 +27,8 @@
       width: 90%;
       box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
       color: white;
+      opacity: 0;
+      transition: opacity 1.2s ease;
     }
 
     .login-container .logo {
@@ -158,6 +160,11 @@
         }
         err.textContent = 'Invalid username or password.';
       }
+    });
+
+    // Fade-in effect for login-container
+    window.addEventListener('DOMContentLoaded', function() {
+      document.querySelector('.login-container').style.opacity = '1';
     });
   </script>
 </body>

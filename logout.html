@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta http-equiv="refresh" content="3; url=login.html" />
+ <meta http-equiv="refresh" content="3; url=login.html" /> 
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Logging Out...</title>
   <link rel="icon" href="album/logo_igrab.png" type="image/png" />
@@ -26,11 +26,15 @@
       padding: 40px;
       border-radius: 10px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      opacity: 0;
+      transition: opacity 1.2s ease;
     }
 
     .logout-container img {
-      width: 80px;
-      margin-bottom: 20px;
+      max-width:250px;
+      height: auto;
+      margin-top: -20px;
+      margin-bottom: -20px;
     }
 
     .logout-container h1 {
@@ -49,5 +53,19 @@
     <h1>You have been logged out</h1>
     <p>Redirecting to login page...</p>
   </div>
+  <script>
+    // Fade-in on load
+    window.addEventListener('DOMContentLoaded', function() {
+      const container = document.querySelector('.logout-container');
+      container.style.opacity = '1';
+      // Fade out before redirect
+      setTimeout(function() {
+        container.style.opacity = '0';
+        setTimeout(function() {
+          window.location.href = 'login.html';
+        }, 1200); // match transition duration
+      }, 1800); // show for 1.8s, then fade out
+    });
+  </script>
 </body>
 </html>
