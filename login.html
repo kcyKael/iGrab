@@ -129,8 +129,8 @@
     </form>
   </div>
 
-  <script>
-    alert("\n To use this website fully, use the following credentials: \n \t For Guest: \n \t\t username: Guest \n \t\tpassword: 123 \n\n \t For Admin: \n \t\t username: Admin \n \t\t password: admin123 \n ");
+    <script>
+    alert("\n To use this website fully, use the following credentials: \n \t For Guest: \n \t\t username: Guest \n \t\tpassword: 123 \n\n \t For Admin: \n \t\t username: Admin \n \t\t password: admin123 \n\n \t ??? Account: \n \t\t username: MSL \n \t\t password: surprise123 \n ??? Classified information");
     // User database
     const users = [
       { username: 'Guest', password: '123', role: 'Student', studentNumber: '999999999' },
@@ -138,7 +138,8 @@
       { username: 'Jerah', password: 'jer123', role: 'Student', studentNumber: '202410990' },
       { username: 'Erin', password: 'eri123', role: 'Student', studentNumber: '202410991' },
       { username: 'Emran', password: 'emr123', role: 'Admin' },
-      { username: 'Kyl', password: 'kyl123', role: 'Admin' }
+      { username: 'Kyl', password: 'kyl123', role: 'Admin' },
+      { username: 'MSL', password: 'surprise123', role: 'MissileLaunch' }
     ];
 
     document.querySelector('.login-form').addEventListener('submit', function(e) {
@@ -149,21 +150,25 @@
       if (user) {
         // Optionally store user info in sessionStorage/localStorage
         sessionStorage.setItem('igrabUser', JSON.stringify(user));
-        window.location.href = 'index.html';
-      } else {
-        // Show error message
-        let err = document.getElementById('login-error');
-        if (!err) {
-          err = document.createElement('div');
-          err.id = 'login-error';
-          err.style.color = '#ff5252';
-          err.style.marginTop = '10px';
-          err.style.fontWeight = 'bold';
-          document.querySelector('.login-container').appendChild(err);
+        if (user.role === 'MissileLaunch') {
+          window.location.href = 'mt-ms.console.html';
+        } else {
+          window.location.href = 'index.html';
         }
-        err.textContent = 'Invalid username or password.';
+      } else {
+      // Show error message
+      let err = document.getElementById('login-error');
+      if (!err) {
+        err = document.createElement('div');
+        err.id = 'login-error';
+        err.style.color = '#ff5252';
+        err.style.marginTop = '10px';
+        err.style.fontWeight = 'bold';
+        document.querySelector('.login-container').appendChild(err);
       }
-    });
+      err.textContent = 'Invalid username or password.';
+    }
+  });
 
     // Fade-in effect for login-container
     window.addEventListener('DOMContentLoaded', function() {

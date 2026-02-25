@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Philippine Strategic Defense Console (Demo)</title>
+  <link rel="icon" href="album/logo_igrab.png" type="image/png"/>
+  <style>
+    /* ===== Missile Console styles (from missile-joke.html) ===== */
+    :root {
+      --bg: #05080f;
+      --panel: #0f1726;
+      --line: #3dff9b;
+      --line-dim: #1d7a4b;
+      --danger: #ff4e4e;
+      --accent: #03d9ff;
+      --soft: #9ad9ba;
+
+      /* Overlay palette (from login-logout.html) */
+      --bg-0: #060913;
+      --bg-1: #0b1020;
+      --cyan: #5df7ff;
+      --teal: #3ef0c5;
+      --violet: #9f7bff;
+      --ink: #c8d5ff;
+      --danger2: #ff6f89;
+      --glass: rgba(10, 16, 34, 0.68);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: "Consolas", "Courier New", monospace;
+      background: radial-gradient(circle at center, #101b2d 0%, var(--bg) 62%);
+      color: var(--line);
+    }
+
+    body.shake {
+      animation: shake 0.32s linear infinite;
+    }
+
+    @keyframes shake {
+      0% { transform: translate(0, 0); }
+      25% { transform: translate(2px, -2px); }
+      50% { transform: translate(-2px, 2px); }
+      75% { transform: translate(2px, 1px); }
+      100% { transform: translate(0, 0); }
+    }
+
+    .console {
+      width: 100vw;
+      height: 100vh;
+      border: 2px solid var(--line-dim);
+      background: rgba(0, 0, 0, 0.85);
+      box-shadow: inset 0 0 40px rgba(61, 255, 155, 0.14);
+      display: grid;
+      grid-template-rows: auto 1fr;
+      position: relative;
+    }
+
+    .flash-side {
+      position: absolute;
+      pointer-events: none;
+      opacity: 0;
+      z-index: 20;
+      filter: blur(1px);
+      mix-blend-mode: screen;
+    }
+
+    .flash-side.left,
+    .flash-side.right {
+      top: 0;
+      bottom: 0;
+      width: 34px;
+      background: radial-gradient(circle at center, rgba(255, 70, 70, 1) 0%, rgba(255, 28, 28, 0.65) 38%, rgba(255, 0, 0, 0.05) 70%, rgba(255,0,0,0) 88%);
+    }
+
+    .flash-side.top,
+    .flash-side.bottom {
+      left: 0;
+      right: 0;
+      height: 34px;
+      background: radial-gradient(circle at center, rgba(255, 70, 70, 1) 0%, rgba(255, 28, 28, 0.65) 38%, rgba(255, 0, 0, 0.05) 70%, rgba(255,0,0,0) 88%);
+    }
+
+    .flash-side.left { left: 0; }
+    .flash-side.right { right: 0; }
+    .flash-side.top { top: 0; }
+    .flash-side.bottom { bottom: 0; }
+    .flash-side.active { animation: flashEdge 0.2s ease-in-out infinite; }
+
+    @keyframes flashEdge {
+      0%, 100% { opacity: 0.08; }
+      45% { opacity: 1; }
+      70% { opacity: 0.52; }
+    }
+
+    .topbar {
+      background: #0c1320;
+      border-bottom: 1px solid var(--line-dim);
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .top-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo {
+      width: 38px;
+      height: 38px;
+      border-radius: 6px;
+      object-fit: contain;
+      background: #0f1726;
+      border: 1px solid rgba(255,255,255,0.18);
+      padding: 4px;
+    }
+
+    .title {
+      color: var(--accent);
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      font-size: 1rem;
+    }
+
+    .top-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #dff8ee;
+      font-size: 0.86rem;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      border: 1px solid rgba(3, 217, 255, 0.7);
+      color: #8ef4ff;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-weight: 700;
+      background: rgba(3, 217, 255, 0.12);
+    }
+
+    .chip {
+      border: 1px solid var(--danger);
+      color: #ffd3d3;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-weight: 700;
+      background: rgba(255, 78, 78, 0.12);
+      animation: pulse 1.2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.45; }
+      50% { opacity: 1; }
+    }
+
+    .content {
+      padding: 12px;
+      display: grid;
+      grid-template-columns: 2.2fr 1fr;
+      gap: 12px;
+      min-height: 0;
+    }
+
+    .panel {
+      border: 1px solid var(--line-dim);
+      background: var(--panel);
+      border-radius: 10px;
+      padding: 12px;
+      min-height: 0;
+      position: relative;
+    }
+
+    .panel-status {
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.74rem;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      color: #cbe7d8;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(0, 0, 0, 0.35);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      box-shadow: 0 0 10px currentColor;
+    }
+
+    .status-dot.green {
+      color: #5cff8f;
+      background: #5cff8f;
+    }
+
+    .status-dot.orange {
+      color: #ffb347;
+      background: #ffb347;
+    }
+
+    .map-wrap {
+      height: calc(100vh - 255px);
+      min-height: 350px;
+      position: relative;
+      border: 1px solid var(--line-dim);
+      border-radius: 10px;
+      overflow: hidden;
+      cursor: crosshair;
+      background:
+        linear-gradient(to right, rgba(61, 255, 155, 0.16) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(61, 255, 155, 0.16) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(14, 60, 42, 0.26), rgba(5, 8, 15, 1));
+      background-size: 34px 34px, 34px 34px, auto;
+    }
+
+    .sweep {
+      position: absolute;
+      width: 160%;
+      height: 160%;
+      top: -30%;
+      left: -30%;
+      pointer-events: none;
+      background: conic-gradient(from 0deg, rgba(3,217,255,0.04), rgba(61,255,155,0.28), rgba(3,217,255,0.04) 45deg, transparent 75deg);
+      transform-origin: center;
+      animation: rotateSweep 8s linear infinite;
+      mix-blend-mode: screen;
+    }
+
+    @keyframes rotateSweep { from { transform: rotate(0deg);} to { transform: rotate(360deg);} }
+
+    .ph-map {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      padding: 16px;
+      pointer-events: none;
+    }
+
+    .island {
+      fill: rgba(3, 217, 255, 0.1);
+      stroke: #58ffd9;
+      stroke-width: 1.8;
+      cursor: pointer;
+      transition: fill 0.25s ease, filter 0.25s ease;
+      pointer-events: auto;
+    }
+
+    .island:hover { fill: rgba(61,255,155,0.28); }
+
+    .island.active {
+      fill: rgba(255, 78, 78, 0.5);
+      filter: drop-shadow(0 0 10px rgba(255, 78, 78, 0.7));
+    }
+
+    .target-ring {
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--danger);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      box-shadow: 0 0 12px rgba(255, 78, 78, 0.8);
+      display: none;
+      z-index: 3;
+    }
+
+    .target-ring::before,
+    .target-ring::after {
+      content: "";
+      position: absolute;
+      background: var(--danger);
+    }
+
+    .target-ring::before { left: 50%; top: -10px; bottom: -10px; width: 2px; transform: translateX(-50%); }
+    .target-ring::after { top: 50%; left: -10px; right: -10px; height: 2px; transform: translateY(-50%); }
+
+    .telemetry { margin-top: 10px; font-size: 0.9rem; color: #d3ffdf; }
+    .telemetry span { color: var(--accent); font-weight: 700; }
+
+    .stats { display: grid; gap: 8px; margin-top: 8px; }
+    .stat { display: flex; justify-content: space-between; border-bottom: 1px dashed rgba(61,255,155,0.35); padding-bottom: 4px; }
+
+    .btn-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .button {
+      border: 1px solid #ff7f7f;
+      background: linear-gradient(180deg, rgba(255, 111, 111, 0.42), rgba(120, 13, 13, 0.96));
+      color: #ffe8e8;
+      font-weight: 800;
+      padding: 11px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      letter-spacing: 0.3px;
+      margin-top: 12px;
+      box-shadow: 0 0 22px rgba(255, 86, 86, 0.4);
+      width: fit-content;
+      justify-self: center;
+    }
+
+    .button:hover { filter: brightness(1.08); }
+    .button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .sub-btn {
+      border: 1px solid #3dff9b;
+      background: transparent;
+      color: #d7ffe7;
+      padding: 9px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .sub-btn.on {
+      background: rgba(61, 255, 155, 0.18);
+      border-color: #5fffaf;
+    }
+
+    .sub-btn.off {
+      background: rgba(255, 78, 78, 0.2);
+      border-color: #ff7f7f;
+      color: #ffe2e2;
+    }
+
+    .destruct-btn {
+      border: 1px solid #ff7f7f;
+      background: rgba(255, 78, 78, 0.15);
+      color: #ffd0d0;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 0.78rem;
+      cursor: pointer;
+    }
+
+    .destruct-btn:hover {
+      filter: brightness(1.08);
+      background: rgba(255, 78, 78, 0.26);
+    }
+
+    .command-actions {
+      margin-top: 10px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      justify-items: center;
+    }
+
+    .reset-wrap {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+    }
+
+    .reset-wrap .sub-btn {
+      width: min(220px, 100%);
+    }
+
+    .countdown {
+      margin-top: 10px;
+      text-align: center;
+      border: 1px solid rgba(61,255,155,0.35);
+      padding: 8px;
+      border-radius: 8px;
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: #e6fff0;
+      min-height: 44px;
+    }
+
+    .log {
+      margin-top: 10px;
+      min-height: 130px;
+      max-height: 220px;
+      overflow: auto;
+      border: 1px solid rgba(61,255,155,0.28);
+      border-radius: 8px;
+      padding: 8px;
+      font-size: 0.84rem;
+      color: #daffe8;
+      background: rgba(0,0,0,0.35);
+    }
+
+    .log p { margin: 0 0 6px; }
+    .small { margin-top: 8px; color: var(--soft); font-size: 0.8rem; line-height: 1.3; }
+
+    .bottom-disclaimer {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      text-align: center;
+      padding: 8px 12px;
+      font-size: 0.78rem;
+      letter-spacing: 0.5px;
+      color: #d9e5df;
+      background: rgba(0, 0, 0, 0.7);
+      border-top: 1px solid rgba(255,255,255,0.2);
+      z-index: 30;
+    }
+
+    @media (max-width: 980px) {
+      .content { grid-template-columns: 1fr; }
+      .map-wrap { height: 45vh; }
+    }
+
+    /* ===== Cinematic Overlay styles (from login-logout.html) ===== */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 220ms ease;
+      background: radial-gradient(circle at 50% 8%, rgba(32, 46, 92, 0.25), rgba(6, 8, 17, 0.8) 60%, rgba(4, 6, 12, 0.95));
+      isolation: isolate;
+    }
+
+    .overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .overlay::before,
+    .overlay::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .overlay::before {
+      background:
+        repeating-linear-gradient(
+          to bottom,
+          rgba(255, 255, 255, 0.022) 0px,
+          rgba(255, 255, 255, 0.022) 1px,
+          transparent 2px,
+          transparent 4px
+        );
+      mix-blend-mode: soft-light;
+    }
+
+    .overlay::after {
+      background: radial-gradient(circle at 20% 20%, rgba(93, 247, 255, 0.09), transparent 38%),
+                  radial-gradient(circle at 80% 30%, rgba(159, 123, 255, 0.11), transparent 45%);
+      animation: huePulse 4.5s ease-in-out infinite;
+      mix-blend-mode: screen;
+    }
+
+    /* Self-destruct variant (red) */
+    .overlay.danger {
+      background: radial-gradient(circle at 50% 8%, rgba(140, 20, 20, 0.32), rgba(10, 6, 8, 0.85) 60%, rgba(6, 4, 6, 0.96));
+    }
+
+    .overlay.danger::after {
+      background: radial-gradient(circle at 22% 22%, rgba(255, 96, 96, 0.16), transparent 40%),
+                  radial-gradient(circle at 80% 30%, rgba(255, 168, 96, 0.12), transparent 48%);
+      animation: huePulse 3.2s ease-in-out infinite;
+      mix-blend-mode: screen;
+    }
+
+    .overlay.danger .status-panel {
+      border-color: rgba(255, 78, 78, 0.45);
+    }
+
+    .overlay.danger .status-title {
+      color: rgba(255, 190, 190, 0.9);
+    }
+
+    .overlay.danger .light.ok {
+      background: var(--danger);
+      box-shadow: 0 0 10px rgba(255, 78, 78, 0.75);
+    }
+
+    @keyframes huePulse {
+      0%, 100% { opacity: 0.46; }
+      50% { opacity: 0.88; }
+    }
+
+    #fxCanvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      z-index: 1;
+    }
+
+    .hud {
+      position: absolute;
+      z-index: 2;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .hud-card {
+      width: min(640px, 100%);
+      border-radius: 16px;
+      padding: 18px 16px 14px;
+      border: 1px solid rgba(93, 247, 255, 0.35);
+      background: linear-gradient(180deg, rgba(14, 23, 48, 0.76), rgba(10, 16, 36, 0.85));
+      box-shadow:
+        0 0 20px rgba(93, 247, 255, 0.16),
+        0 0 0 1px rgba(159, 123, 255, 0.16) inset;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hud-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(130deg, transparent 0%, rgba(93, 247, 255, 0.08) 45%, transparent 70%);
+      transform: translateX(-110%);
+      animation: sheen 2.6s linear infinite;
+    }
+
+    @keyframes sheen {
+      to { transform: translateX(120%); }
+    }
+
+    .status-panel {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      z-index: 3;
+      border: 1px solid rgba(93, 247, 255, 0.26);
+      background: var(--glass);
+      border-radius: 12px;
+      padding: 10px;
+      min-width: 185px;
+      backdrop-filter: blur(4px);
+    }
+
+    .status-title {
+      margin: 0 0 8px;
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      color: #a8bcff;
+      text-transform: uppercase;
+    }
+
+    .lights {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .light {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #2a3759;
+      box-shadow: 0 0 0 rgba(0,0,0,0);
+      animation: blink 1.8s infinite;
+    }
+
+    .light.ok { background: var(--teal); box-shadow: 0 0 10px rgba(62, 240, 197, 0.75); }
+    .light.warn { background: #ffd86a; box-shadow: 0 0 10px rgba(255, 216, 106, 0.7); animation-delay: 220ms; }
+    .light.io { background: var(--violet); box-shadow: 0 0 10px rgba(159,123,255,0.7); animation-delay: 440ms; }
+
+    @keyframes blink { 0%, 100% { opacity: .65; } 50% { opacity: 1; } }
+
+    .status-line {
+      color: #c3cff7;
+      font-size: 0.74rem;
+      line-height: 1.25;
+      opacity: 0.92;
+    }
+
+    .hud-title {
+      margin: 0 0 8px;
+      font-size: clamp(0.88rem, 2vw, 1.02rem);
+      color: #d8edff;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .step-line {
+      margin: 0;
+      min-height: 1.5em;
+      font-size: clamp(0.94rem, 2.2vw, 1.1rem);
+      color: #e5f6ff;
+      letter-spacing: 0.08em;
+      text-shadow: 0 0 8px rgba(93, 247, 255, 0.28);
+    }
+
+    .progress {
+      margin-top: 14px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .bar {
+      height: 7px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      overflow: hidden;
+      border: 1px solid rgba(93, 247, 255, 0.2);
+    }
+
+    .bar > span {
+      display: block;
+      height: 100%;
+      width: 0%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, rgba(93, 247, 255, 0.9), rgba(159, 123, 255, 0.9));
+      box-shadow: 0 0 14px rgba(93, 247, 255, 0.5);
+      transition: width 180ms linear;
+    }
+
+    .wave-wrap {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 14px;
+      z-index: 3;
+      display: flex;
+      justify-content: center;
+      pointer-events: none;
+    }
+
+    #wave {
+      width: min(760px, 92vw);
+      height: 70px;
+      opacity: 0.94;
+      filter: drop-shadow(0 0 8px rgba(93, 247, 255, 0.35));
+    }
+
+    #skipBtn {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      z-index: 4;
+      border: 1px solid rgba(93, 247, 255, 0.34);
+      background: rgba(9, 15, 30, 0.7);
+      color: #dcf4ff;
+      border-radius: 999px;
+      padding: 7px 12px;
+      cursor: pointer;
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    #skipBtn:hover { filter: brightness(1.08); }
+
+    .hidden { display: none !important; }
+
+    .reduced .hud-card::before,
+    .reduced .overlay::after,
+    .reduced .light,
+    .reduced #wave {
+      animation: none !important;
+    }
+
+    @media (max-width: 640px) {
+      .status-panel { min-width: 150px; padding: 8px; }
+      #skipBtn { top: 10px; right: 10px; font-size: 0.72rem; }
+      .hud { padding: 16px; }
+      .hud-card { padding-top: 58px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- ===== Missile Console UI ===== -->
+  <main class="console" id="console">
+    <div class="flash-side left" id="flashLeft"></div>
+    <div class="flash-side right" id="flashRight"></div>
+    <div class="flash-side top" id="flashTop"></div>
+    <div class="flash-side bottom" id="flashBottom"></div>
+
+    <header class="topbar">
+      <div class="top-left">
+        <img src="album/logo_igrab.png" alt="iGrab logo" class="logo" />
+        <div class="title">Philippine Strategic Defense Console</div>
+      </div>
+      <div class="top-right">
+        <span class="badge">Operator: CLASSIFIED</span>
+        <button class="destruct-btn" id="selfDestructBtn">SELF-DESTRUCT</button>
+        <span class="chip">LIVE</span>
+      </div>
+    </header>
+
+    <section class="content">
+      <div class="panel">
+        <div class="panel-status"><span class="status-dot green"></span>Ready</div>
+        <h2>Philippines Targeting Grid</h2>
+        <div class="map-wrap" id="mapWrap" aria-label="Clickable targeting map">
+          <div class="sweep" aria-hidden="true"></div>
+
+          <svg class="ph-map" viewBox="0 0 800 500" role="img" aria-label="Stylized clickable Philippines map">
+            <ellipse class="island" data-region="Batanes" data-x="470" data-y="75" cx="470" cy="75" rx="18" ry="10" />
+            <path class="island" data-region="Luzon" data-x="430" data-y="170" d="M390,120 L445,110 L500,145 L515,190 L500,245 L448,270 L405,255 L375,210 L385,165 Z" />
+            <path class="island" data-region="Mindoro" data-x="360" data-y="265" d="M340,240 L372,235 L385,270 L364,300 L336,285 Z" />
+            <path class="island" data-region="Palawan" data-x="300" data-y="310" d="M280,220 L300,235 L310,265 L306,310 L292,360 L273,405 L258,395 L272,338 L280,290 Z" />
+            <path class="island" data-region="Visayas" data-x="470" data-y="305" d="M430,280 L470,266 L518,275 L540,305 L530,340 L486,352 L448,342 L425,312 Z" />
+            <path class="island" data-region="Mindanao" data-x="560" data-y="390" d="M505,340 L585,332 L640,372 L636,430 L582,470 L515,462 L472,420 L478,375 Z" />
+          </svg>
+
+          <div class="target-ring" id="targetRing"></div>
+        </div>
+        <div class="telemetry">
+          Selected region: <span id="selectedRegion">None</span> |
+          Coords: <span id="coords">--, --</span> |
+          Signal: <span id="signal">0%</span>
+        </div>
+        <p class="small">Map background is also selectable for custom points.</p>
+      </div>
+
+      <aside class="panel">
+        <div class="panel-status"><span class="status-dot orange"></span>Online</div>
+        <h2>Command Console</h2>
+        <div class="stats">
+          <div class="stat"><span>Status:</span><strong id="status">IDLE</strong></div>
+          <div class="stat"><span>Time:</span><strong id="clock">--:--:--</strong></div>
+          <div class="stat"><span>Protocol:</span><strong>SIM-ALPHA</strong></div>
+          <div class="stat"><span>Key:</span><strong id="keyState">NOT TURNED</strong></div>
+          <div class="stat"><span>Safety:</span><strong id="safetyState">ON</strong></div>
+        </div>
+
+        <div class="btn-row">
+          <button class="sub-btn" id="keyTurnBtn">Turn Key</button>
+          <button class="sub-btn on" id="safetyBtn">Safety ON</button>
+        </div>
+
+        <div class="command-actions">
+          <div class="reset-wrap">
+            <button class="sub-btn" id="clearBtn">Reset Target</button>
+          </div>
+
+          <button class="button" id="launchBtn" disabled>Launch Missile</button>
+        </div>
+
+        <div class="countdown" id="countdown">Countdown: --</div>
+        <div class="log" id="log"></div>
+      </aside>
+    </section>
+
+    <div class="bottom-disclaimer">THIS IS A VISUAL JOKE/DEMO ONLY. NO REAL SYSTEMS ARE CONNECTED.</div>
+  </main>
+
+  <!-- ===== Cinematic Overlay (reused for arrival + self-destruct) ===== -->
+  <section id="overlay" class="overlay" aria-live="polite" aria-label="Cinematic sequence overlay">
+    <canvas id="fxCanvas"></canvas>
+
+    <div class="status-panel" aria-hidden="true">
+      <p class="status-title">Cinematic Status</p>
+      <div class="lights">
+        <span class="light ok"></span>
+        <span class="light warn"></span>
+        <span class="light io"></span>
+      </div>
+      <div id="statusLine" class="status-line">Overlay: Standby</div>
+    </div>
+
+    <button id="skipBtn" type="button">Skip</button>
+
+    <div class="hud">
+      <article class="hud-card" role="status" aria-atomic="true">
+        <h2 id="hudTitle" class="hud-title">System Sequence</h2>
+        <p id="stepText" class="step-line"></p>
+        <div class="progress" aria-hidden="true">
+          <div class="bar"><span id="bar1"></span></div>
+          <div class="bar"><span id="bar2"></span></div>
+          <div class="bar"><span id="bar3"></span></div>
+        </div>
+      </article>
+    </div>
+
+    <div class="wave-wrap" aria-hidden="true">
+      <svg id="wave" viewBox="0 0 1000 100" preserveAspectRatio="none">
+        <path id="wavePath" d="" fill="none" stroke="url(#waveGrad)" stroke-width="2.4" stroke-linecap="round"/>
+        <defs>
+          <linearGradient id="waveGrad" x1="0%" x2="100%" y1="0%" y2="0%">
+            <stop offset="0%" stop-color="#3ef0c5"/>
+            <stop offset="55%" stop-color="#5df7ff"/>
+            <stop offset="100%" stop-color="#9f7bff"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+  </section>
+
+  <script>
+    /* ===== Cinematic overlay engine (adapted from login-logout.html) ===== */
+    (() => {
+      const overlay = document.getElementById('overlay');
+      const stepText = document.getElementById('stepText');
+      const hudTitle = document.getElementById('hudTitle');
+      const statusLine = document.getElementById('statusLine');
+      const skipBtn = document.getElementById('skipBtn');
+      const bars = [
+        document.getElementById('bar1'),
+        document.getElementById('bar2'),
+        document.getElementById('bar3')
+      ];
+
+      const canvas = document.getElementById('fxCanvas');
+      const ctx = canvas.getContext('2d', { alpha: true });
+      const wavePath = document.getElementById('wavePath');
+
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduceMotion) document.documentElement.classList.add('reduced');
+
+      const state = {
+        mode: 'arrival',
+        running: false,
+        skipRequested: false,
+        raf: 0,
+        startTime: 0,
+        particles: [],
+        width: 0,
+        height: 0,
+        dpr: Math.min(window.devicePixelRatio || 1, 2),
+        redirectUrl: null
+      };
+
+      const sequences = {
+        arrival: {
+          totalMs: reduceMotion ? 420 : 1600,
+          title: 'Arrival Authorization',
+          status: 'Overlay: Arrival sequence',
+          steps: [
+            'SECURE LINK: ESTABLISHING',
+            'BIOMETRIC TOKEN: VERIFIED',
+            'CRYPTO HANDSHAKE: COMPLETE',
+            'CLEARANCE: AUTHORIZED',
+            'ACCESS: GRANTED'
+          ]
+        },
+        selfdestruct: {
+          totalMs: reduceMotion ? 380 : 1200,
+          title: 'Session Shutdown',
+          status: 'Overlay: Self-destruct sequence',
+          steps: [
+            'SELF-DESTRUCT: ARMED',
+            'SESSION: TERMINATING',
+            'KEYS: PURGED',
+            'LINK: CLOSED',
+            'ACCESS: REVOKED'
+          ]
+        }
+      };
+
+      function resizeCanvas() {
+        state.width = window.innerWidth;
+        state.height = window.innerHeight;
+        canvas.width = Math.floor(state.width * state.dpr);
+        canvas.height = Math.floor(state.height * state.dpr);
+        canvas.style.width = state.width + 'px';
+        canvas.style.height = state.height + 'px';
+        ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+        initParticles();
+      }
+
+      function initParticles() {
+        const count = Math.max(24, Math.floor((state.width * state.height) / 26000));
+        state.particles = Array.from({ length: count }, () => ({
+          x: Math.random() * state.width,
+          y: Math.random() * state.height,
+          vx: (Math.random() - 0.5) * 0.18,
+          vy: (Math.random() - 0.5) * 0.18,
+          r: Math.random() * 1.2 + 0.35,
+          a: Math.random() * 0.6 + 0.2
+        }));
+      }
+
+      function drawFx(now) {
+        if (!state.running) return;
+
+        const elapsed = now - state.startTime;
+        const sweep = (elapsed * 0.17) % (state.width + 220);
+
+        ctx.clearRect(0, 0, state.width, state.height);
+
+        // Grid
+        ctx.save();
+        ctx.strokeStyle = 'rgba(93,247,255,0.08)';
+        ctx.lineWidth = 1;
+        const gap = 42;
+        const ox = (elapsed * 0.02) % gap;
+        for (let x = -gap + ox; x < state.width + gap; x += gap) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, state.height);
+          ctx.stroke();
+        }
+        for (let y = 0; y < state.height + gap; y += gap) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(state.width, y);
+          ctx.stroke();
+        }
+        ctx.restore();
+
+        // Scan sweep
+        const grad = ctx.createLinearGradient(sweep - 190, 0, sweep, 0);
+        grad.addColorStop(0, 'rgba(93,247,255,0)');
+        grad.addColorStop(0.7, 'rgba(93,247,255,0.08)');
+        grad.addColorStop(1, 'rgba(159,123,255,0.18)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(sweep - 210, 0, 220, state.height);
+
+        // Particles
+        ctx.fillStyle = 'rgba(93,247,255,0.82)';
+        for (const p of state.particles) {
+          p.x += p.vx;
+          p.y += p.vy;
+          if (p.x < -5) p.x = state.width + 5;
+          if (p.x > state.width + 5) p.x = -5;
+          if (p.y < -5) p.y = state.height + 5;
+          if (p.y > state.height + 5) p.y = -5;
+          ctx.globalAlpha = p.a;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+
+        drawWave(elapsed);
+        state.raf = requestAnimationFrame(drawFx);
+      }
+
+      function drawWave(elapsed) {
+        const points = 96;
+        const w = 1000;
+        const base = 52;
+        const amp = 14;
+        let d = '';
+        for (let i = 0; i <= points; i++) {
+          const x = (i / points) * w;
+          const wave = Math.sin((i * 0.3) + elapsed * 0.012) * amp;
+          const wave2 = Math.sin((i * 0.09) + elapsed * 0.006) * 5;
+          const y = base + wave + wave2;
+          d += i === 0 ? `M ${x.toFixed(2)} ${y.toFixed(2)}` : ` L ${x.toFixed(2)} ${y.toFixed(2)}`;
+        }
+        wavePath.setAttribute('d', d);
+      }
+
+      function wait(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+      }
+
+      async function typeLine(text, ms) {
+        if (reduceMotion) {
+          stepText.textContent = text;
+          await wait(Math.min(ms, 80));
+          return;
+        }
+
+        const chars = text.length;
+        const per = Math.max(8, ms / Math.max(chars, 1));
+        stepText.textContent = '';
+        for (let i = 0; i < chars; i++) {
+          if (state.skipRequested) return;
+          stepText.textContent += text[i];
+          await wait(per);
+        }
+      }
+
+      function updateBars(progress) {
+        const p1 = Math.min(100, progress * 140);
+        const p2 = Math.max(0, Math.min(100, (progress - 0.18) * 130));
+        const p3 = Math.max(0, Math.min(100, (progress - 0.42) * 145));
+        bars[0].style.width = `${p1}%`;
+        bars[1].style.width = `${p2}%`;
+        bars[2].style.width = `${p3}%`;
+      }
+
+      function setOverlayMode(mode) {
+        state.mode = mode === 'selfdestruct' ? 'selfdestruct' : 'arrival';
+        const cfg = sequences[state.mode];
+        hudTitle.textContent = cfg.title;
+        statusLine.textContent = cfg.status;
+        // Visual mode: make the self-destruct overlay red.
+        overlay.classList.toggle('danger', state.mode === 'selfdestruct');
+      }
+
+      async function runSequence(mode, redirectUrl = null) {
+        if (state.running) return;
+        state.running = true;
+        state.skipRequested = false;
+        state.redirectUrl = redirectUrl;
+
+        setOverlayMode(mode);
+
+        overlay.classList.add('active');
+        skipBtn.classList.remove('hidden');
+        state.startTime = performance.now();
+        cancelAnimationFrame(state.raf);
+        state.raf = requestAnimationFrame(drawFx);
+
+        const cfg = sequences[state.mode];
+        const steps = cfg.steps;
+        // Each phase should take at least 3 seconds (per user request).
+        const phaseMs = 3000;
+
+        for (let i = 0; i < steps.length; i++) {
+          if (state.skipRequested) break;
+          const line = steps[i];
+          const progress = (i + 1) / steps.length;
+          updateBars(progress);
+          // Allocate most of the phase to typing, then a short hold.
+          await typeLine(line, Math.max(120, phaseMs * 0.7));
+          if (state.skipRequested) break;
+          await wait(Math.max(24, phaseMs * 0.3));
+        }
+
+        updateBars(1);
+        await wait(reduceMotion ? 70 : 120);
+        finishSequence();
+
+        if (state.mode === 'selfdestruct' && state.redirectUrl) {
+          window.location.href = state.redirectUrl;
+        }
+      }
+
+      function finishSequence() {
+        state.running = false;
+        cancelAnimationFrame(state.raf);
+        overlay.classList.remove('active');
+        skipBtn.classList.add('hidden');
+      }
+
+      function onSkip() {
+        if (!state.running) return;
+        state.skipRequested = true;
+        finishSequence();
+        if (state.mode === 'selfdestruct' && state.redirectUrl) {
+          window.location.href = state.redirectUrl;
+        }
+      }
+
+      function teardownOverlay() {
+        cancelAnimationFrame(state.raf);
+        state.running = false;
+        overlay.classList.remove('active');
+        skipBtn.classList.add('hidden');
+        state.skipRequested = true;
+      }
+
+      // Public hooks
+      window.playArrivalSequence = () => runSequence('arrival', null);
+      window.playSelfDestructSequence = (redirectUrl) => runSequence('selfdestruct', redirectUrl);
+      window.teardownOverlay = teardownOverlay;
+
+      skipBtn.addEventListener('click', onSkip);
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') onSkip();
+      }, { passive: true });
+
+      window.addEventListener('resize', resizeCanvas, { passive: true });
+      resizeCanvas();
+
+      // Play arrival once on load for "combined" experience.
+      window.playArrivalSequence();
+    })();
+  </script>
+
+  <script>
+    /* ===== Missile Console logic (from missile-joke.html, adapted to use overlay) ===== */
+    (() => {
+      const mapWrap = document.getElementById('mapWrap');
+      const selectedRegion = document.getElementById('selectedRegion');
+      const coords = document.getElementById('coords');
+      const signal = document.getElementById('signal');
+      const status = document.getElementById('status');
+      const clock = document.getElementById('clock');
+      const logEl = document.getElementById('log');
+      const launchBtn = document.getElementById('launchBtn');
+      const clearBtn = document.getElementById('clearBtn');
+      const keyTurnBtn = document.getElementById('keyTurnBtn');
+      const safetyBtn = document.getElementById('safetyBtn');
+      const keyState = document.getElementById('keyState');
+      const safetyState = document.getElementById('safetyState');
+      const selfDestructBtn = document.getElementById('selfDestructBtn');
+      const countdownEl = document.getElementById('countdown');
+      const targetRing = document.getElementById('targetRing');
+      const islands = [...document.querySelectorAll('.island')];
+      const flashLeft = document.getElementById('flashLeft');
+      const flashRight = document.getElementById('flashRight');
+      const flashTop = document.getElementById('flashTop');
+      const flashBottom = document.getElementById('flashBottom');
+
+      let currentTarget = null;
+      let busy = false;
+      let keyTurned = false;
+      let safetyOn = true;
+
+      function addLog(message, color = '#daffe8') {
+        const line = document.createElement('p');
+        line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+        line.style.color = color;
+        logEl.prepend(line);
+      }
+
+      function setStatus(text, color = '#fff') {
+        status.textContent = text;
+        status.style.color = color;
+      }
+
+      function updateClock() {
+        clock.textContent = new Date().toLocaleTimeString();
+      }
+
+      function refreshLaunchReadiness() {
+        const ready = !!currentTarget && keyTurned && !safetyOn && !busy;
+        launchBtn.disabled = !ready;
+      }
+
+      function markTarget(x, y, region) {
+        currentTarget = { x, y, region };
+        selectedRegion.textContent = region;
+        coords.textContent = `${x}, ${y}`;
+        targetRing.style.display = 'block';
+        targetRing.style.left = `${(x / 800) * 100}%`;
+        targetRing.style.top = `${(y / 500) * 100}%`;
+        addLog(`Target locked: ${region}.`, '#9be7ff');
+        setStatus('TARGET LOCK', '#03d9ff');
+        refreshLaunchReadiness();
+      }
+
+      setInterval(updateClock, 1000);
+      updateClock();
+
+      setInterval(() => {
+        const noise = currentTarget ? Math.floor(76 + Math.random() * 23) : Math.floor(Math.random() * 14);
+        signal.textContent = `${noise}%`;
+      }, 900);
+
+      islands.forEach((island) => {
+        island.addEventListener('click', (e) => {
+          if (busy) return;
+          e.stopPropagation();
+          islands.forEach(i => i.classList.remove('active'));
+          island.classList.add('active');
+
+          const x = Number(island.dataset.x);
+          const y = Number(island.dataset.y);
+          markTarget(x, y, island.dataset.region);
+        });
+      });
+
+      mapWrap.addEventListener('click', (e) => {
+        if (busy || e.target.classList.contains('island')) return;
+        islands.forEach(i => i.classList.remove('active'));
+        const rect = mapWrap.getBoundingClientRect();
+        const x = Math.max(0, Math.min(800, Math.round(((e.clientX - rect.left) / rect.width) * 800)));
+        const y = Math.max(0, Math.min(500, Math.round(((e.clientY - rect.top) / rect.height) * 500)));
+        markTarget(x, y, 'Custom Point');
+      });
+
+      keyTurnBtn.addEventListener('click', () => {
+        if (busy) return;
+        keyTurned = !keyTurned;
+        keyState.textContent = keyTurned ? 'TURNED' : 'NOT TURNED';
+        keyTurnBtn.textContent = keyTurned ? 'Key Turned' : 'Turn Key';
+        keyTurnBtn.classList.toggle('on', keyTurned);
+        addLog(`Key mechanism ${keyTurned ? 'engaged' : 'disengaged'}.`, '#c4e4ff');
+        refreshLaunchReadiness();
+      });
+
+      safetyBtn.addEventListener('click', () => {
+        if (busy) return;
+        safetyOn = !safetyOn;
+        safetyState.textContent = safetyOn ? 'ON' : 'OFF';
+        safetyBtn.textContent = `Safety ${safetyOn ? 'ON' : 'OFF'}`;
+        safetyBtn.classList.toggle('on', safetyOn);
+        safetyBtn.classList.toggle('off', !safetyOn);
+        addLog(`Safety switched ${safetyOn ? 'ON' : 'OFF'}.`, safetyOn ? '#ffe6a4' : '#ffb2b2');
+        refreshLaunchReadiness();
+      });
+
+      clearBtn.addEventListener('click', () => {
+        if (busy) return;
+        islands.forEach(i => i.classList.remove('active'));
+        currentTarget = null;
+        selectedRegion.textContent = 'None';
+        coords.textContent = '--, --';
+        targetRing.style.display = 'none';
+        setStatus('IDLE', '#fff');
+        countdownEl.textContent = 'Countdown: --';
+        addLog('Targeting matrix reset.', '#ffe6a4');
+        refreshLaunchReadiness();
+      });
+
+      selfDestructBtn.addEventListener('click', async () => {
+        if (busy) return;
+        busy = true;
+        refreshLaunchReadiness();
+        selfDestructBtn.disabled = true;
+
+        // Optional: wipe a session token (kept from missile-joke.html)
+        sessionStorage.removeItem('igrabUser');
+
+        addLog('SELF-DESTRUCT initiated. Terminating session...', '#ff8b8b');
+        try {
+          // Run cinematic + redirect. Change URL as needed.
+          await window.playSelfDestructSequence('logout.html');
+        } finally {
+          // If redirect doesn't happen (missing file), safely unlock UI.
+          busy = false;
+          selfDestructBtn.disabled = false;
+          refreshLaunchReadiness();
+        }
+      });
+
+      launchBtn.addEventListener('click', async () => {
+        if (!currentTarget || busy || !keyTurned || safetyOn) return;
+        busy = true;
+        refreshLaunchReadiness();
+        keyTurnBtn.disabled = true;
+        safetyBtn.disabled = true;
+        clearBtn.disabled = true;
+
+        setStatus('AUTH CHECK', '#ffcc7a');
+        addLog(`Authenticating simulation protocol for ${currentTarget.region}...`, '#ffefaf');
+        await delay(800);
+
+        setStatus('COUNTDOWN', '#ff8f8f');
+        flashLeft.classList.add('active');
+        flashRight.classList.add('active');
+        flashTop.classList.add('active');
+        flashBottom.classList.add('active');
+
+        for (let t = 10; t >= 1; t--) {
+          countdownEl.textContent = `Countdown: ${t}s`;
+          addLog(`T-${t}s`, t <= 3 ? '#ff8080' : '#ffc5c5');
+
+          if (t <= 3) document.body.classList.add('shake');
+          await delay(1000);
+        }
+
+        document.body.classList.remove('shake');
+        flashLeft.classList.remove('active');
+        flashRight.classList.remove('active');
+        flashTop.classList.remove('active');
+        flashBottom.classList.remove('active');
+        countdownEl.textContent = 'Countdown: COMPLETE';
+
+        setStatus('SUCCESS', '#3dff9b');
+        addLog(`✅ Missile Launch completed for ${currentTarget.region}.`, '#8cffba');
+        addLog('TERMINAL EVENT TRIGGERED. ROUTING TO SIMULATION SANDBOX…', '#a6fbcf');
+        addLog('SIMULATION COMPLETE — NO REAL SYSTEMS ENGAGED.', '#8cffba');
+        addLog('ALL OUTPUTS ROUTED TO /dev/null. OPERATOR CLEARED.', '#b5dbff');
+
+        busy = false;
+        keyTurnBtn.disabled = false;
+        safetyBtn.disabled = false;
+        clearBtn.disabled = false;
+        refreshLaunchReadiness();
+      });
+
+      function delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+      }
+
+      addLog('System online. Configure key and safety, then choose a target.', '#a6fbcf');
+      refreshLaunchReadiness();
+    })();
+  </script>
+</body>
+</html>
